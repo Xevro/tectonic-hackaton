@@ -9,7 +9,7 @@ import {
   isAllowedMemoryKey,
   type MemoryUpdate,
 } from "@/lib/extract";
-import { isDemoCustomer, type DemoCustomerId } from "@/lib/profiles";
+import type { DemoCustomerId } from "@/lib/profiles";
 import { commitmentsBetween, movableCents } from "@/lib/finance";
 import { extractWithGemini } from "@/lib/gemini";
 import { describeCustomer, planNextAction, type MemoryView, type PlanContext } from "@/lib/planner";
@@ -18,6 +18,8 @@ import { MILA_HOME_STEP_CENTS, MILA_HOME_TARGET_CENTS, VAT_SAFETY_CENTS } from "
 import { laterQuote } from "@/lib/population";
 
 const textSchema = z.string().trim().min(1).max(2000);
+const customerIdSchema = z.enum(["mila", "sofie", "noah"]);
+const actionTypeSchema = z.enum(["adjust_savings_plan", "allocate_to_pot", "reserve_vat"]);
 const SAFE_ID = /^[A-Za-z0-9_-]{1,40}$/;
 const safeIdSchema = z.string().regex(SAFE_ID);
 const moveSchema = z.object({
@@ -34,10 +36,9 @@ const adjustSchema = z.object({
 export class CompassError extends Error {}
 
 function requireCustomerId(value: unknown): DemoCustomerId {
-  if (typeof value !== "string" || !isDemoCustomer(value)) {
-    throw new CompassError("Customer not found");
-  }
-  return value;
+  const parsed = customerIdSchema.safeParse(value);
+  if (!parsed.success) throw new CompassError("Customer not found");
+  return parsed.data;
 }
 
 function requireSafeId(value: unknown): string {
@@ -64,10 +65,9 @@ function requireCents(value: unknown): number {
 function requireActionType(
   value: unknown,
 ): "adjust_savings_plan" | "allocate_to_pot" | "reserve_vat" {
-  if (value !== "adjust_savings_plan" && value !== "allocate_to_pot" && value !== "reserve_vat") {
-    throw new CompassError("Unknown action");
-  }
-  return value;
+  const parsed = actionTypeSchema.safeParse(value);
+  if (!parsed.success) throw new CompassError("Unknown action");
+  return parsed.data;
 }
 
 type Graph = NonNullable<Awaited<ReturnType<typeof loadGraph>>>;
@@ -95,7 +95,7 @@ export async function handleUserMessage(untrustedCustomerId: string, raw: string
   const saved = await applyUpdates(customerId, updates);
   if (intent === "defer") {
     await prisma.proposedAction.updateMany({
-      where: { customerId, status: "pending" },
+      where: { customerId: { equals: customerIdSchema.parse(customerId) }, status: "pending" },
       data: { status: "declined", resolvedAt: new Date() },
     });
   }
@@ -127,7 +127,7 @@ export async function handleUserMessage(untrustedCustomerId: string, raw: string
 export async function openNewSession(untrustedCustomerId: string) {
   const customerId = requireCustomerId(untrustedCustomerId);
   await prisma.conversation.updateMany({
-    where: { customerId, closedAt: null },
+    where: { customerId: { equals: customerIdSchema.parse(customerId) }, closedAt: null },
     data: { closedAt: new Date() },
   });
   await prisma.conversation.create({ data: { customerId } });
@@ -260,7 +260,11 @@ async function syncGoals(untrustedCustomerId: string) {
   const note = memories.find((memory) => memory.key === "income_note");
   if (!note) return;
   await prisma.memoryItem.updateMany({
-    where: { customerId, key: "variable_income", status: "hypothesis" },
+    where: {
+      customerId: { equals: customerIdSchema.parse(customerId) },
+      key: "variable_income",
+      status: "hypothesis",
+    },
     data: { status: "confirmed", source: "customer_statement" },
   });
   const vat = await prisma.bill.findFirst({ where: { customerId, purpose: "vat" } });
@@ -287,7 +291,11 @@ async function upsertProposal(
   const customerId = requireCustomerId(untrustedCustomerId);
   const type = requireActionType(draft.type);
   await prisma.proposedAction.updateMany({
-    where: { customerId, status: "pending", NOT: { type } },
+    where: {
+      customerId: { equals: customerIdSchema.parse(customerId) },
+      status: "pending",
+      NOT: { type: { equals: actionTypeSchema.parse(type) } },
+    },
     data: { status: "replaced", resolvedAt: new Date() },
   });
   const existing = await prisma.proposedAction.findFirst({
