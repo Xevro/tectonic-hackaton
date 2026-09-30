@@ -9,8 +9,9 @@ const source = Source_Sans_3({
 });
 
 export const metadata: Metadata = {
-  title: "KBC Compass",
-  description: "A financial companion that learns from each conversation and acts only with your approval.",
+  title: "Situation 141",
+  description:
+    "The next banking situation builds itself from a household’s own past and from other people who bent the same way.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

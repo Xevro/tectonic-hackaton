@@ -1,17 +1,13 @@
 {
-  "name": "kbc-compass",
+  "name": "situation-141",
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "next build",
     "start": "next start",
-    "db:push": "node --env-file=.env.local ./node_modules/prisma/build/index.js db push",
-    "db:seed": "node --env-file=.env.local ./node_modules/tsx/dist/cli.mjs prisma/seed.ts",
-    "check": "node --env-file=.env.local ./node_modules/tsx/dist/cli.mjs scripts/check-finance.ts",
-    "demo": "node --env-file=.env.local ./node_modules/tsx/dist/cli.mjs scripts/demo-flow.ts"
+    "eval": "node ./node_modules/tsx/dist/cli.mjs scripts/eval-situations.ts"
   },
   "dependencies": {
-    "@prisma/client": "^6.16.2",
     "next": "^16.3.8",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
@@ -24,12 +20,8 @@
     "@types/react-dom": "^19.1.9",
     "eslint": "^9.36.0",
     "eslint-config-next": "^16.3.8",
-    "prisma": "^6.16.2",
     "tailwindcss": "^4.1.13",
     "tsx": "^4.20.5",
     "typescript": "^5.9.2"
-  },
-  "overrides": {
-    "deepmerge-ts": "8.0.2"
   }
 }
