@@ -1,0 +1,12 @@
+.git
+.gitignore
+.idea
+.next
+node_modules
+npm-debug.log*
+.env
+.env.*
+!.env.example
+*.md
+.DS_Store
+*.tsbuildinfo

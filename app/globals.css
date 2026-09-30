@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+@theme {
+  --color-kbc-navy: #003768;
+  --color-kbc-blue: #00aeef;
+  --color-kbc-mist: #e6f7fd;
+  --color-kbc-canvas: #f4f7fa;
+  --color-kbc-ink: #16324f;
+  --color-kbc-muted: #5c6b7a;
+  --color-kbc-line: #e3e8ee;
+  --color-kbc-danger: #9f2d2d;
+  --color-kbc-ok: #0f6b4c;
+  --font-sans: var(--font-source), ui-sans-serif, system-ui, sans-serif;
+}
+
+body {
+  min-height: 100vh;
+  background: var(--color-kbc-canvas);
+  color: var(--color-kbc-ink);
+}
+
+::selection {
+  background: #b9e8fa;
+}
