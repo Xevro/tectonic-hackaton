@@ -1,0 +1,491 @@
+{
+ "headline": {
+  "patterns_planted": 8,
+  "patterns_recovered": 7,
+  "recovered": [
+   "going_self_employed",
+   "first_home_purchase",
+   "new_child",
+   "vehicle_replacement",
+   "caring_for_ageing_parent",
+   "separation",
+   "financial_distress"
+  ],
+  "missed": [
+   "subscription_creep"
+  ],
+  "headline_event": "going_self_employed",
+  "headline_median_lead_days_holdout": 56.0,
+  "false_cohorts": 2,
+  "cohorts_suppressed_or_protected": 5
+ },
+ "discovery": {
+  "going_self_employed": {
+   "recovered": true,
+   "cohorts": [
+    "S141"
+   ],
+   "purity": 0.926,
+   "train_households": 389,
+   "captured_in_cohort": 339,
+   "capture_rate": 0.871
+  },
+  "first_home_purchase": {
+   "recovered": true,
+   "cohorts": [
+    "S142"
+   ],
+   "purity": 1.0,
+   "train_households": 315,
+   "captured_in_cohort": 95,
+   "capture_rate": 0.302
+  },
+  "new_child": {
+   "recovered": true,
+   "cohorts": [
+    "S146"
+   ],
+   "purity": 1.0,
+   "train_households": 281,
+   "captured_in_cohort": 147,
+   "capture_rate": 0.523
+  },
+  "vehicle_replacement": {
+   "recovered": true,
+   "cohorts": [
+    "S143"
+   ],
+   "purity": 0.773,
+   "train_households": 409,
+   "captured_in_cohort": 75,
+   "capture_rate": 0.183
+  },
+  "subscription_creep": {
+   "recovered": false,
+   "cohorts": [],
+   "purity": 0.0,
+   "train_households": 632,
+   "captured_in_cohort": 0,
+   "capture_rate": 0.0
+  },
+  "caring_for_ageing_parent": {
+   "recovered": true,
+   "cohorts": [
+    "S144"
+   ],
+   "purity": 1.0,
+   "train_households": 243,
+   "captured_in_cohort": 209,
+   "capture_rate": 0.86
+  },
+  "separation": {
+   "recovered": true,
+   "cohorts": [
+    "S148"
+   ],
+   "purity": 1.0,
+   "train_households": 201,
+   "captured_in_cohort": 58,
+   "capture_rate": 0.289
+  },
+  "financial_distress": {
+   "recovered": true,
+   "cohorts": [
+    "S149",
+    "S150"
+   ],
+   "purity": 1.0,
+   "train_households": 319,
+   "captured_in_cohort": 211,
+   "capture_rate": 0.661
+  }
+ },
+ "cohort_composition": {
+  "S141": {
+   "majority": "going_self_employed",
+   "purity": 0.926,
+   "size": 366,
+   "mix": {
+    "going_self_employed": 339,
+    "hard_negative": 27
+   }
+  },
+  "S142": {
+   "majority": "first_home_purchase",
+   "purity": 1.0,
+   "size": 95,
+   "mix": {
+    "first_home_purchase": 95
+   }
+  },
+  "S143": {
+   "majority": "vehicle_replacement",
+   "purity": 0.773,
+   "size": 97,
+   "mix": {
+    "hard_negative": 22,
+    "vehicle_replacement": 75
+   }
+  },
+  "S144": {
+   "majority": "caring_for_ageing_parent",
+   "purity": 1.0,
+   "size": 209,
+   "mix": {
+    "caring_for_ageing_parent": 209
+   }
+  },
+  "S145": {
+   "majority": "hard_negative",
+   "purity": 0.702,
+   "size": 121,
+   "mix": {
+    "going_self_employed": 36,
+    "hard_negative": 85
+   }
+  },
+  "S146": {
+   "majority": "new_child",
+   "purity": 1.0,
+   "size": 147,
+   "mix": {
+    "new_child": 147
+   }
+  },
+  "S147": {
+   "majority": "control",
+   "purity": 0.537,
+   "size": 67,
+   "mix": {
+    "caring_for_ageing_parent": 4,
+    "control": 36,
+    "financial_distress": 1,
+    "first_home_purchase": 2,
+    "going_self_employed": 2,
+    "hard_negative": 5,
+    "new_child": 3,
+    "separation": 3,
+    "subscription_creep": 8,
+    "vehicle_replacement": 3
+   }
+  },
+  "S148": {
+   "majority": "separation",
+   "purity": 1.0,
+   "size": 58,
+   "mix": {
+    "separation": 58
+   }
+  },
+  "S149": {
+   "majority": "financial_distress",
+   "purity": 1.0,
+   "size": 144,
+   "mix": {
+    "financial_distress": 144
+   }
+  },
+  "S150": {
+   "majority": "financial_distress",
+   "purity": 1.0,
+   "size": 67,
+   "mix": {
+    "financial_distress": 67
+   }
+  }
+ },
+ "false_cohorts": {
+  "ids": [
+   "S145",
+   "S147"
+  ],
+  "gate_status": {
+   "S145": "pass",
+   "S147": "pass"
+  }
+ },
+ "lead_time": {
+  "going_self_employed": {
+   "train": {
+    "n": 339,
+    "median_true_lead_days": 56.0,
+    "p25": 42.0,
+    "p75": 63.0,
+    "share_detected_before_event": 0.965
+   },
+   "holdout": {
+    "n": 129,
+    "median_true_lead_days": 56.0,
+    "p25": 49.0,
+    "p75": 63.0,
+    "share_detected_before_event": 0.984
+   },
+   "pipeline_estimate_days": 84.0
+  },
+  "first_home_purchase": {
+   "train": {
+    "n": 95,
+    "median_true_lead_days": 63.0,
+    "p25": -14.0,
+    "p75": 84.0,
+    "share_detected_before_event": 0.632
+   },
+   "holdout": {
+    "n": 27,
+    "median_true_lead_days": 77.0,
+    "p25": -14.0,
+    "p75": 87.5,
+    "share_detected_before_event": 0.667
+   },
+   "pipeline_estimate_days": 98.0
+  },
+  "new_child": {
+   "train": {
+    "n": 147,
+    "median_true_lead_days": 42.0,
+    "p25": -42.0,
+    "p75": 63.0,
+    "share_detected_before_event": 0.68
+   },
+   "holdout": {
+    "n": 52,
+    "median_true_lead_days": 24.5,
+    "p25": -49.0,
+    "p75": 56.0,
+    "share_detected_before_event": 0.615
+   },
+   "pipeline_estimate_days": 84.0
+  },
+  "vehicle_replacement": {
+   "train": {
+    "n": 75,
+    "median_true_lead_days": 105.0,
+    "p25": 70.0,
+    "p75": 126.0,
+    "share_detected_before_event": 0.973
+   },
+   "holdout": {
+    "n": 27,
+    "median_true_lead_days": 119.0,
+    "p25": 91.0,
+    "p75": 133.0,
+    "share_detected_before_event": 1.0
+   },
+   "pipeline_estimate_days": 14.0
+  },
+  "caring_for_ageing_parent": {
+   "train": {
+    "n": 209,
+    "median_true_lead_days": 56.0,
+    "p25": 14.0,
+    "p75": 77.0,
+    "share_detected_before_event": 0.789
+   },
+   "holdout": {
+    "n": 77,
+    "median_true_lead_days": 63.0,
+    "p25": 35.0,
+    "p75": 84.0,
+    "share_detected_before_event": 0.922
+   },
+   "pipeline_estimate_days": 14.0
+  },
+  "separation": {
+   "train": {
+    "n": 58,
+    "median_true_lead_days": 56.0,
+    "p25": 8.75,
+    "p75": 77.0,
+    "share_detected_before_event": 0.759
+   },
+   "holdout": {
+    "n": 23,
+    "median_true_lead_days": 49.0,
+    "p25": 14.0,
+    "p75": 66.5,
+    "share_detected_before_event": 0.826
+   },
+   "pipeline_estimate_days": 42.0
+  },
+  "financial_distress": {
+   "train": {
+    "n": 211,
+    "median_true_lead_days": -42.0,
+    "p25": -56.0,
+    "p75": 105.0,
+    "share_detected_before_event": 0.355
+   },
+   "holdout": {
+    "n": 88,
+    "median_true_lead_days": -49.0,
+    "p25": -56.0,
+    "p75": 105.0,
+    "share_detected_before_event": 0.295
+   },
+   "pipeline_estimate_days": 94.5
+  }
+ },
+ "gate": {
+  "going_self_employed": {
+   "expected": "pass",
+   "got": [
+    "pass"
+   ],
+   "correct": true
+  },
+  "first_home_purchase": {
+   "expected": "pass",
+   "got": [
+    "pass"
+   ],
+   "correct": true
+  },
+  "new_child": {
+   "expected": "protection_only",
+   "got": [
+    "protection_only"
+   ],
+   "correct": true
+  },
+  "vehicle_replacement": {
+   "expected": "pass",
+   "got": [
+    "pass"
+   ],
+   "correct": true
+  },
+  "caring_for_ageing_parent": {
+   "expected": "protection_only",
+   "got": [
+    "protection_only"
+   ],
+   "correct": true
+  },
+  "separation": {
+   "expected": "suppressed",
+   "got": [
+    "suppressed"
+   ],
+   "correct": true
+  },
+  "financial_distress": {
+   "expected": "suppressed",
+   "got": [
+    "suppressed"
+   ],
+   "correct": true
+  }
+ },
+ "holdout": {
+  "going_self_employed": {
+   "assigned": 135,
+   "precision": 0.956,
+   "recall": 0.801
+  },
+  "first_home_purchase": {
+   "assigned": 27,
+   "precision": 1.0,
+   "recall": 0.2
+  },
+  "new_child": {
+   "assigned": 52,
+   "precision": 1.0,
+   "recall": 0.437
+  },
+  "vehicle_replacement": {
+   "assigned": 35,
+   "precision": 0.771,
+   "recall": 0.141
+  },
+  "caring_for_ageing_parent": {
+   "assigned": 77,
+   "precision": 1.0,
+   "recall": 0.72
+  },
+  "separation": {
+   "assigned": 23,
+   "precision": 1.0,
+   "recall": 0.232
+  },
+  "financial_distress": {
+   "assigned": 88,
+   "precision": 1.0,
+   "recall": 0.672
+  }
+ },
+ "contact": {
+  "holdout_households": 3009,
+  "ours": {
+   "messages": 135,
+   "correct": 129,
+   "precision": 0.956,
+   "sent_to_separating_or_distressed": 0,
+   "sent_to_hard_negatives": 6,
+   "silent": 2874
+  },
+  "baseline_any_change": {
+   "messages": 617,
+   "correct": 232,
+   "precision": 0.376,
+   "sent_to_separating_or_distressed": 152,
+   "sent_to_hard_negatives": 55
+  },
+  "baseline_everyone": {
+   "messages": 3009,
+   "correct": 755,
+   "precision": 0.251
+  },
+  "message_reduction_vs_any_change": 0.781
+ },
+ "controls": {
+  "mean_cohort_purity_real": 0.894,
+  "mean_cohort_purity_shuffled": 0.278,
+  "largest_class_base_rate": 0.275
+ },
+ "supervised_ladder": {
+  "task": "Will 'going_self_employed' happen within 12 weeks? Features cut 12 weeks before the event.",
+  "holdout_positives": 161,
+  "holdout_negatives": 2848,
+  "note": "A transformer sequence encoder (PRAGMA / nuFormer style) is the scale-up path; it was not trained here because torch was unavailable in the build environment. The interface is unchanged.",
+  "logistic_regression": {
+   "roc_auc": 0.99,
+   "pr_auc": 0.979,
+   "base_rate": 0.054,
+   "precision_top_decile": 0.527,
+   "roc_auc_vs_hard_negatives_only": 0.988,
+   "lift_top_decile": 9.8
+  },
+  "gradient_boosting": {
+   "roc_auc": 0.989,
+   "pr_auc": 0.968,
+   "base_rate": 0.054,
+   "precision_top_decile": 0.523,
+   "roc_auc_vs_hard_negatives_only": 0.988,
+   "lift_top_decile": 9.8
+  },
+  "warning": "ROC-AUC near 0.99 reflects how cleanly the pattern was PLANTED in synthetic data. It is not an estimate of real-world performance. Real households mix several changes at once and precision will be materially lower."
+ },
+ "lead_estimate_error_days": {
+  "per_pattern": {
+   "going_self_employed": 28.0,
+   "first_home_purchase": 21.0,
+   "new_child": 59.5,
+   "vehicle_replacement": -105.0,
+   "caring_for_ageing_parent": -49.0,
+   "separation": -7.0,
+   "financial_distress": 143.5
+  },
+  "mean_absolute_error": 59.0,
+  "note": "Pipeline's label-free lead estimate minus true holdout lead. Headline lead times are taken from the TRUE holdout values, never the estimate."
+ },
+ "lookalike_cohorts": {
+  "S145": {
+   "hard_negatives": 85,
+   "mixed_in_true_events": {
+    "going_self_employed": 36
+   },
+   "review_state": "pending"
+  }
+ },
+ "caveat": "Synthetic data generated by this team. These results validate that the pipeline and method work end to end and recover planted structure. They are not evidence of real-world precision on KBC customers."
+}

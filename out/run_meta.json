@@ -1,0 +1,14 @@
+{
+ "n_households": 10000,
+ "n_eval_points": 41,
+ "embed_dim": 24,
+ "threshold_quantile": 0.97,
+ "threshold": 6.427,
+ "n_bends": 2143,
+ "n_cohorts": 10,
+ "holdout_households": 3009,
+ "holdout_messaged": 135,
+ "holdout_prepared_quietly": 129,
+ "holdout_silent": 2745,
+ "seconds": 15.4
+}

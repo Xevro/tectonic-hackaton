@@ -1,0 +1,462 @@
+[
+ {
+  "candidate_id": "S141",
+  "cohort_id": "C02",
+  "title": "Business equipment and an accountant",
+  "description": "366 households pay business equipment more often; start paying an accountant; start paying a social insurance fund; start paying enterprise registration. The largest change in recurring income or fixed costs follows a median of 84 days later (pipeline estimate).",
+  "size": 366,
+  "median_lead_days": 84.0,
+  "coverage": "no_existing_rule",
+  "rank_score": 5.4896,
+  "stability": 0.996,
+  "top_features": [
+   {
+    "feature": "business_equipment__amount_z",
+    "weight": 3.087
+   },
+   {
+    "feature": "business_equipment__new",
+    "weight": 2.66
+   },
+   {
+    "feature": "accountant_fee__new",
+    "weight": 2.078
+   },
+   {
+    "feature": "social_insurance_fund__new",
+    "weight": 2.049
+   },
+   {
+    "feature": "enterprise_counter_fee__new",
+    "weight": 2.049
+   },
+   {
+    "feature": "app_loan_screen__new",
+    "weight": 1.553
+   }
+  ],
+  "gate": {
+   "status": "pass",
+   "reason": null
+  },
+  "review": {
+   "state": "approved",
+   "reviewer": null,
+   "decided_at": null
+  }
+ },
+ {
+  "candidate_id": "S142",
+  "cohort_id": "C05",
+  "title": "Property platforms and loan screens in the app",
+  "description": "95 households pay property platforms more often; start using loan screens in the app; start using the mortgage simulator; start paying a notary escrow deposit. The largest change in recurring income or fixed costs follows a median of 98 days later (pipeline estimate).",
+  "size": 95,
+  "median_lead_days": 98.0,
+  "coverage": "existing_rule",
+  "rank_score": 1.0773,
+  "stability": 0.867,
+  "top_features": [
+   {
+    "feature": "property_platform__amount_z",
+    "weight": 2.464
+   },
+   {
+    "feature": "property_platform__rate_z",
+    "weight": 1.976
+   },
+   {
+    "feature": "app_loan_screen__new",
+    "weight": 1.595
+   },
+   {
+    "feature": "property_platform__new",
+    "weight": 1.5
+   },
+   {
+    "feature": "mortgage_simulator_session__new",
+    "weight": 1.484
+   },
+   {
+    "feature": "notary_escrow__new",
+    "weight": 1.121
+   }
+  ],
+  "gate": {
+   "status": "pass",
+   "reason": null
+  },
+  "review": {
+   "state": "pending",
+   "reviewer": null,
+   "decided_at": null
+  }
+ },
+ {
+  "candidate_id": "S143",
+  "cohort_id": "C04",
+  "title": "Garage repairs and roadside assistance",
+  "description": "97 households pay garage repairs more often; start paying roadside assistance; start receiving one-off windfalls; start using loan screens in the app. The largest change in recurring income or fixed costs follows a median of 14 days later (pipeline estimate).",
+  "size": 97,
+  "median_lead_days": 14.0,
+  "coverage": "existing_rule",
+  "rank_score": 0.1781,
+  "stability": 0.999,
+  "top_features": [
+   {
+    "feature": "garage_repair__amount_z",
+    "weight": 5.575
+   },
+   {
+    "feature": "garage_repair__new",
+    "weight": 2.397
+   },
+   {
+    "feature": "garage_repair__rate_z",
+    "weight": 1.384
+   },
+   {
+    "feature": "roadside_assistance__new",
+    "weight": 1.361
+   },
+   {
+    "feature": "windfall_in__new",
+    "weight": 0.588
+   },
+   {
+    "feature": "app_loan_screen__new",
+    "weight": 0.448
+   }
+  ],
+  "gate": {
+   "status": "pass",
+   "reason": null
+  },
+  "review": {
+   "state": "pending",
+   "reviewer": null,
+   "decided_at": null
+  }
+ },
+ {
+  "candidate_id": "S144",
+  "cohort_id": "C00",
+  "title": "Care transport and home care",
+  "description": "209 households pay care transport more often; pay home care more often; pay an elder care provider more often. The largest change in recurring income or fixed costs follows a median of 14 days later (pipeline estimate).",
+  "size": 209,
+  "median_lead_days": 14.0,
+  "coverage": "no_existing_rule",
+  "rank_score": 0.0,
+  "stability": 0.998,
+  "top_features": [
+   {
+    "feature": "care_transport__amount_z",
+    "weight": 3.546
+   },
+   {
+    "feature": "home_care_service__amount_z",
+    "weight": 2.663
+   },
+   {
+    "feature": "care_transport__rate_z",
+    "weight": 2.033
+   },
+   {
+    "feature": "home_care_service__new",
+    "weight": 1.981
+   },
+   {
+    "feature": "elder_care_provider__amount_z",
+    "weight": 1.412
+   },
+   {
+    "feature": "care_transport__new",
+    "weight": 1.163
+   }
+  ],
+  "gate": {
+   "status": "protection_only",
+   "reason": "health"
+  },
+  "review": {
+   "state": "blocked",
+   "reviewer": null,
+   "decided_at": null
+  }
+ },
+ {
+  "candidate_id": "S145",
+  "cohort_id": "C01",
+  "title": "Irregular client payments and travel",
+  "description": "121 households receive more irregular client payments; start paying travel; start paying coworking space; start paying professional liability cover. The largest change in recurring income or fixed costs follows a median of 0 days later (pipeline estimate).",
+  "size": 121,
+  "median_lead_days": 0.0,
+  "coverage": "no_existing_rule",
+  "rank_score": 0.0,
+  "stability": 0.999,
+  "top_features": [
+   {
+    "feature": "client_payment_in__amount_z",
+    "weight": 5.913
+   },
+   {
+    "feature": "client_payment_in__new",
+    "weight": 2.653
+   },
+   {
+    "feature": "client_payment_in__rate_z",
+    "weight": 2.263
+   },
+   {
+    "feature": "travel__new",
+    "weight": 0.372
+   },
+   {
+    "feature": "coworking_out__new",
+    "weight": 0.186
+   },
+   {
+    "feature": "professional_liability_ins__new",
+    "weight": 0.174
+   }
+  ],
+  "gate": {
+   "status": "pass",
+   "reason": null
+  },
+  "review": {
+   "state": "pending",
+   "reviewer": null,
+   "decided_at": null
+  }
+ },
+ {
+  "candidate_id": "S146",
+  "cohort_id": "C03",
+  "title": "Baby shops and insurance screens in the app",
+  "description": "147 households pay baby shops more often; start using insurance screens in the app; pay prenatal care more often; start paying childcare. The largest change in recurring income or fixed costs follows a median of 84 days later (pipeline estimate).",
+  "size": 147,
+  "median_lead_days": 84.0,
+  "coverage": "partial_rule",
+  "rank_score": 0.0,
+  "stability": 0.987,
+  "top_features": [
+   {
+    "feature": "baby_retail__amount_z",
+    "weight": 5.54
+   },
+   {
+    "feature": "baby_retail__rate_z",
+    "weight": 2.634
+   },
+   {
+    "feature": "baby_retail__new",
+    "weight": 1.796
+   },
+   {
+    "feature": "app_insurance_screen__new",
+    "weight": 1.52
+   },
+   {
+    "feature": "prenatal_care_out__amount_z",
+    "weight": 0.667
+   },
+   {
+    "feature": "childcare_out__new",
+    "weight": 0.52
+   }
+  ],
+  "gate": {
+   "status": "protection_only",
+   "reason": "health"
+  },
+  "review": {
+   "state": "blocked",
+   "reviewer": null,
+   "decided_at": null
+  }
+ },
+ {
+  "candidate_id": "S147",
+  "cohort_id": "C06",
+  "title": "One-off windfalls and travel",
+  "description": "67 households receive more one-off windfalls; start paying travel; start paying fitness subscriptions. The largest change in recurring income or fixed costs follows a median of 0 days later (pipeline estimate).",
+  "size": 67,
+  "median_lead_days": 0.0,
+  "coverage": "no_existing_rule",
+  "rank_score": 0.0,
+  "stability": 0.725,
+  "top_features": [
+   {
+    "feature": "windfall_in__amount_z",
+    "weight": 5.469
+   },
+   {
+    "feature": "windfall_in__new",
+    "weight": 2.955
+   },
+   {
+    "feature": "travel__new",
+    "weight": 0.985
+   },
+   {
+    "feature": "travel__amount_z",
+    "weight": 0.617
+   },
+   {
+    "feature": "windfall_in__rate_z",
+    "weight": 0.472
+   },
+   {
+    "feature": "subscription_fitness__new",
+    "weight": 0.201
+   }
+  ],
+  "gate": {
+   "status": "pass",
+   "reason": null
+  },
+  "review": {
+   "state": "pending",
+   "reviewer": null,
+   "decided_at": null
+  }
+ },
+ {
+  "candidate_id": "S148",
+  "cohort_id": "C07",
+  "title": "Legal fees and mediation",
+  "description": "58 households pay legal fees more often; start paying mediation; start paying rent. The largest change in recurring income or fixed costs follows a median of 42 days later (pipeline estimate).",
+  "size": 58,
+  "median_lead_days": 42.0,
+  "coverage": "no_existing_rule",
+  "rank_score": 0.0,
+  "stability": 0.716,
+  "top_features": [
+   {
+    "feature": "legal_fee__amount_z",
+    "weight": 5.324
+   },
+   {
+    "feature": "legal_fee__new",
+    "weight": 2.198
+   },
+   {
+    "feature": "mediation_fee__new",
+    "weight": 1.94
+   },
+   {
+    "feature": "legal_fee__rate_z",
+    "weight": 1.297
+   },
+   {
+    "feature": "mediation_fee__amount_z",
+    "weight": 0.864
+   },
+   {
+    "feature": "rent_out__new",
+    "weight": 0.543
+   }
+  ],
+  "gate": {
+   "status": "suppressed",
+   "reason": "separation"
+  },
+  "review": {
+   "state": "blocked",
+   "reviewer": null,
+   "decided_at": null
+  }
+ },
+ {
+  "candidate_id": "S149",
+  "cohort_id": "C08",
+  "title": "Overdraft interest and balance checks",
+  "description": "144 households pay overdraft interest more often; use balance checks far more often; pay failed direct debits more often; start paying debt collection. The largest change in recurring income or fixed costs follows a median of 112 days later (pipeline estimate).",
+  "size": 144,
+  "median_lead_days": 112.0,
+  "coverage": "no_existing_rule",
+  "rank_score": 0.0,
+  "stability": 0.998,
+  "top_features": [
+   {
+    "feature": "overdraft_interest__amount_z",
+    "weight": 5.545
+   },
+   {
+    "feature": "overdraft_interest__rate_z",
+    "weight": 4.64
+   },
+   {
+    "feature": "app_balance_check__rate_z",
+    "weight": 2.889
+   },
+   {
+    "feature": "failed_direct_debit__rate_z",
+    "weight": 1.077
+   },
+   {
+    "feature": "debt_collection_out__new",
+    "weight": 0.312
+   },
+   {
+    "feature": "overdraft_interest__new",
+    "weight": 0.167
+   }
+  ],
+  "gate": {
+   "status": "suppressed",
+   "reason": "financial_distress"
+  },
+  "review": {
+   "state": "blocked",
+   "reviewer": null,
+   "decided_at": null
+  }
+ },
+ {
+  "candidate_id": "S150",
+  "cohort_id": "C09",
+  "title": "Balance checks and overdraft interest",
+  "description": "67 households use balance checks far more often; start paying overdraft interest; start paying failed direct debits. The largest change in recurring income or fixed costs follows a median of 77 days later (pipeline estimate).",
+  "size": 67,
+  "median_lead_days": 77.0,
+  "coverage": "no_existing_rule",
+  "rank_score": 0.0,
+  "stability": 0.998,
+  "top_features": [
+   {
+    "feature": "app_balance_check__rate_z",
+    "weight": 5.787
+   },
+   {
+    "feature": "overdraft_interest__new",
+    "weight": 2.619
+   },
+   {
+    "feature": "failed_direct_debit__new",
+    "weight": 2.306
+   },
+   {
+    "feature": "overdraft_interest__amount_z",
+    "weight": 0.626
+   },
+   {
+    "feature": "overdraft_interest__rate_z",
+    "weight": 0.255
+   },
+   {
+    "feature": "failed_direct_debit__rate_z",
+    "weight": 0.109
+   }
+  ],
+  "gate": {
+   "status": "suppressed",
+   "reason": "financial_distress"
+  },
+  "review": {
+   "state": "blocked",
+   "reviewer": null,
+   "decided_at": null
+  }
+ }
+]

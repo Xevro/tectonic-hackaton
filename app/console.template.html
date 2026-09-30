@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Situation 141 · discovery console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F7F7FB; --panel:#FFFFFF; --ink:#14173A; --soft:#3A3F66; --muted:#5A5F84;
+  --line:#E2E3F0; --purple:#6C5CE7; --purple-ink:#4B3FBF; --lav:#A9AEF2; --navy:#14173A;
+  --chip:#EEEEF6; --pale:#DCDDEE;
+  --display:'Space Grotesk', 'Helvetica Neue', Arial, sans-serif;
+  --body:'Inter', 'Helvetica Neue', Arial, sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F1230; --panel:#161A40; --ink:#F2F2FA; --soft:#C9CBE6; --muted:#9096C4;
+    --line:#262B5C; --purple:#8B7FF0; --purple-ink:#A9AEF2; --lav:#A9AEF2; --navy:#0B0D26;
+    --chip:#20255A; --pale:#2A2F66;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F1230; --panel:#161A40; --ink:#F2F2FA; --soft:#C9CBE6; --muted:#9096C4;
+  --line:#262B5C; --purple:#8B7FF0; --purple-ink:#A9AEF2; --lav:#A9AEF2; --navy:#0B0D26;
+  --chip:#20255A; --pale:#2A2F66;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 var(--body);-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--purple);outline-offset:2px;border-radius:6px}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 24px 64px}
+
+/* header: the ledger count is the one bold element */
+.head{display:grid;grid-template-columns:auto 1fr;gap:28px;align-items:end;padding-bottom:22px;border-bottom:1px solid var(--line)}
+.count{font:700 88px/0.9 var(--display);letter-spacing:-2px;color:var(--ink);white-space:nowrap}
+.count .plus{color:var(--purple)}
+.head h1{margin:0 0 6px;font:600 22px/1.25 var(--display)}
+.head p{margin:0;color:var(--soft);max-width:62ch}
+
+nav{display:flex;gap:4px;margin:18px 0 22px;flex-wrap:wrap}
+nav button{background:none;border:1px solid transparent;padding:8px 14px;border-radius:999px;cursor:pointer;color:var(--muted);font-weight:500}
+nav button[aria-selected="true"]{background:var(--ink);color:var(--bg)}
+nav button:hover:not([aria-selected="true"]){border-color:var(--line);color:var(--ink)}
+
+.view{display:none}.view.on{display:block}
+
+/* situations ledger */
+.split{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:20px;align-items:start}
+.ledger{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.row{display:grid;grid-template-columns:64px 1fr auto;gap:14px;align-items:center;width:100%;text-align:left;
+  background:none;border:0;border-top:1px solid var(--line);padding:14px 16px;cursor:pointer}
+.row:first-child{border-top:0}
+.row:hover{background:var(--chip)}
+.row[aria-current="true"]{background:var(--chip);box-shadow:inset 3px 0 0 var(--purple)}
+.num{font:700 26px/1 var(--display);color:var(--ink);font-variant-numeric:tabular-nums}
+.row.blocked .num{color:var(--muted)}
+.ttl{font-weight:500;line-height:1.35}
+.sub{display:block;color:var(--muted);font-size:13px;margin-top:3px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.chip{font-size:12px;padding:3px 9px;border-radius:999px;background:var(--chip);color:var(--soft);white-space:nowrap}
+.chip.new{background:var(--purple);color:#fff}
+.chip.prot{background:var(--lav);color:#14173A}
+.chip.supp{background:var(--navy);color:#fff}
+.chip.silent{background:transparent;border:1px solid var(--line)}
+
+.detail{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;position:sticky;top:16px}
+.detail h2{margin:0 0 4px;font:600 21px/1.3 var(--display)}
+.detail .lead-num{font:700 44px/1 var(--display);margin:18px 0 2px}
+.detail .lead-lab{color:var(--muted);font-size:13px}
+.detail p{color:var(--soft);margin:10px 0}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:18px 0}
+.stat{border-top:1px solid var(--line);padding-top:8px}
+.stat b{display:block;font:600 19px/1.2 var(--display)}
+.stat span{color:var(--muted);font-size:12px}
+.sig{margin:14px 0 4px}
+.sig h3,.detail h3{font:600 14px/1.3 var(--display);margin:18px 0 8px}
+.bar{display:grid;grid-template-columns:1fr 120px;gap:10px;align-items:center;font-size:13px;margin:6px 0}
+.bar .track{display:block;height:8px;background:var(--chip);border-radius:4px;overflow:hidden}
+.bar .fill{display:block;height:100%;background:var(--purple)}
+.bar .fill.neg{background:var(--lav)}
+.gatebox{border-radius:10px;padding:12px 14px;margin:16px 0;font-size:14px}
+.gatebox.pass{background:var(--chip)}
+.gatebox.prot{background:var(--lav);color:#14173A}
+.gatebox.supp{background:var(--navy);color:#fff}
+.actions{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:var(--panel);padding:9px 16px;border-radius:999px;cursor:pointer;font-weight:500}
+.btn.primary{background:var(--purple);border-color:var(--purple);color:#fff}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.note{font-size:12px;color:var(--muted);margin-top:12px}
+.valid{margin-top:16px;border-top:1px dashed var(--line);padding-top:12px;font-size:13px;color:var(--muted)}
+.valid b{color:var(--ink)}
+
+/* silence */
+.silence-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.pane{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px}
+.pane h2{margin:0;font:600 18px/1.3 var(--display)}
+.pane .big{font:700 52px/1 var(--display);margin:14px 0 4px;font-variant-numeric:tabular-nums}
+.pane .lab{color:var(--muted);font-size:13px}
+canvas{width:100%;height:auto;display:block;margin:14px 0 8px;border-radius:8px}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--muted);flex-wrap:wrap}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.kv{display:grid;grid-template-columns:1fr auto;gap:6px 16px;margin-top:12px;font-size:14px}
+.kv dt{color:var(--soft)}.kv dd{margin:0;font-weight:600;text-align:right;font-variant-numeric:tabular-nums}
+
+/* household */
+.hh-pick{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.hh-pick button{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:9px 12px;cursor:pointer;text-align:left;max-width:260px}
+.hh-pick button[aria-pressed="true"]{border-color:var(--purple);box-shadow:inset 0 0 0 1px var(--purple)}
+.hh-pick b{display:block;font:600 14px/1.2 var(--display)}
+.hh-pick span{font-size:12px;color:var(--muted)}
+.chart-box{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+.chart-box svg{width:100%;height:auto;display:block}
+.story{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:14px}
+.story .step{border-top:2px solid var(--line);padding-top:10px;font-size:14px;color:var(--soft);transition:border-color .3s}
+.story .step.lit{border-color:var(--purple);color:var(--ink)}
+.story .step b{display:block;font:600 14px/1.3 var(--display);color:var(--ink);margin-bottom:3px}
+
+/* method */
+.method{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.m{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+.m b{display:block;font:700 34px/1 var(--display);margin-bottom:6px}
+.m span{color:var(--soft);font-size:14px}
+.caveat{margin-top:18px;background:var(--chip);border-radius:12px;padding:14px 16px;color:var(--soft);font-size:14px;max-width:80ch}
+table{width:100%;border-collapse:collapse;font-size:14px;margin-top:18px;background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+th,td{text-align:left;padding:10px 14px;border-top:1px solid var(--line)}
+th{font:600 13px/1.3 var(--display);color:var(--muted);border-top:0;background:var(--chip)}
+td.r,th.r{text-align:right;font-variant-numeric:tabular-nums}
+.scroll{overflow-x:auto}
+
+@media (max-width:860px){
+  .split,.silence-grid{grid-template-columns:1fr}
+  .detail{position:static}
+  .method{grid-template-columns:repeat(2,1fr)}
+  .count{font-size:64px}
+  .head{grid-template-columns:1fr}
+  .story{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion: reduce){ *{transition:none!important;animation:none!important} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="head">
+    <div class="count" aria-label="140 plus discovered situations"><span id="c140">140</span><span class="plus" id="cplus"></span></div>
+    <div>
+      <h1>Situation 141</h1>
+      <p id="lede">Kate's 140 situations were each written by a person. These were found in synthetic households with no labels, then reviewed here before any customer hears about them.</p>
+    </div>
+  </header>
+
+  <nav role="tablist" aria-label="Views">
+    <button role="tab" aria-selected="true" data-v="sit">Situations</button>
+    <button role="tab" aria-selected="false" data-v="sil">Silence</button>
+    <button role="tab" aria-selected="false" data-v="hh">One household</button>
+    <button role="tab" aria-selected="false" data-v="met">How we checked</button>
+  </nav>
+
+  <!-- SITUATIONS -->
+  <section class="view on" id="v-sit" role="tabpanel">
+    <div class="split">
+      <div class="ledger" id="ledger"></div>
+      <aside class="detail" id="detail" aria-live="polite"></aside>
+    </div>
+  </section>
+
+  <!-- SILENCE -->
+  <section class="view" id="v-sil" role="tabpanel">
+    <div class="silence-grid">
+      <div class="pane">
+        <h2>Speak whenever something changes</h2>
+        <div class="big" id="s-a-num"></div>
+        <div class="lab">messages to holdout households</div>
+        <canvas id="grid-a" width="560" height="340" aria-label="Households contacted when any change is detected"></canvas>
+        <dl class="kv" id="s-a-kv"></dl>
+      </div>
+      <div class="pane">
+        <h2>Speak only for approved situations</h2>
+        <div class="big" id="s-b-num"></div>
+        <div class="lab">messages to the same households</div>
+        <canvas id="grid-b" width="560" height="340" aria-label="Households contacted by Situation 141"></canvas>
+        <dl class="kv" id="s-b-kv"></dl>
+      </div>
+    </div>
+    <div class="legend" style="margin-top:14px">
+      <span><i style="background:var(--purple)"></i>contacted, and it was the right moment</span>
+      <span><i style="background:var(--navy)"></i>contacted a separating or distressed household</span>
+      <span><i style="background:var(--lav)"></i>contacted, wrong moment</span>
+      <span><i style="background:var(--pale)"></i>left alone</span>
+    </div>
+  </section>
+
+  <!-- ONE HOUSEHOLD -->
+  <section class="view" id="v-hh" role="tabpanel">
+    <div class="hh-pick" id="hh-pick"></div>
+    <div class="chart-box">
+      <svg id="hh-svg" viewBox="0 0 960 300" role="img" aria-label="Household departure score over time"></svg>
+      <div class="actions"><button class="btn primary" id="play">Play forward</button><button class="btn" id="reveal" disabled>Reveal what really happened</button></div>
+      <div class="story">
+        <div class="step" id="st1"><b>Its own normal</b><span id="st1t">The score measures how far this household has moved from its own past, never from anyone else's.</span></div>
+        <div class="step" id="st2"><b>The moment</b><span id="st2t">Waiting.</span></div>
+        <div class="step" id="st3"><b>What really happened</b><span id="st3t">Hidden until you reveal it. The engine never saw this.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- METHOD -->
+  <section class="view" id="v-met" role="tabpanel">
+    <div class="method" id="method"></div>
+    <div class="scroll"><table id="lead-table"></table></div>
+    <p class="caveat" id="caveat"></p>
+  </section>
+
+</div>
+
+<script>
+const DATA = /*__DATA__*/null;
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const R = DATA.report, C = DATA.candidates, D = DATA.demo;
+
+// ---------- label helpers ----------
+const READ = {salary_in:"salary", client_payment_in:"client payments", social_insurance_fund:"a social insurance fund",
+  accountant_fee:"an accountant", enterprise_counter_fee:"enterprise registration", professional_liability_ins:"professional liability cover",
+  business_equipment:"business equipment", coworking_out:"coworking", property_platform:"property platforms",
+  mortgage_simulator_session:"the mortgage simulator", surveyor_epc_fee:"a surveyor or EPC", notary_escrow:"a notary escrow",
+  registration_duty:"registration duty", baby_retail:"baby shops", garage_repair:"garage repairs", roadside_assistance:"roadside assistance",
+  car_dealer:"a car dealer", elder_care_provider:"elder care", home_care_service:"home care", care_transport:"care transport",
+  legal_fee:"legal fees", mediation_fee:"mediation", overdraft_interest:"overdraft interest", failed_direct_debit:"failed direct debits",
+  app_balance_check:"balance checks", app_loan_screen:"loan screens", app_insurance_screen:"insurance screens",
+  windfall_in:"one-off windfalls", travel:"travel", debt_collection_out:"debt collection"};
+const STAT = {rate_z:"more often", new:"for the first time", amount_z:"spending up"};
+function featLabel(f){ const [c,s]=f.split("__"); return `${READ[c]||c.replace(/_/g," ")}, ${STAT[s]||s}`; }
+const COV = {no_existing_rule:"no existing rule", partial_rule:"partly covered", existing_rule:"Kate already covers this"};
+const GATE = {pass:"passes the gate", protection_only:"protection only", suppressed:"suppressed"};
+
+// map each candidate to the pattern evaluation matched it to (evaluation only)
+const MATCH = R.cohort_composition;
+function validatedLead(cid){
+  const m = MATCH[cid]; if(!m) return null;
+  const l = R.lead_time[m.majority]; return l && l.holdout ? l.holdout : null;
+}
+
+// ---------- header ----------
+const found = C.length;
+$("#cplus").textContent = "+" + found;
+$("#lede").textContent = `Kate's 140 situations were each written by a person. These ${found} were found in ${DATA.meta.n_households.toLocaleString("en")} synthetic households with no labels, then reviewed here before any customer hears about them.`;
+
+// ---------- tabs ----------
+document.querySelectorAll("nav button").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll("nav button").forEach(x => x.setAttribute("aria-selected", x===b));
+  document.querySelectorAll(".view").forEach(v => v.classList.remove("on"));
+  $("#v-" + b.dataset.v).classList.add("on");
+  if (b.dataset.v === "sil") drawSilence();
+}));
+
+// ---------- situations ----------
+const review = Object.fromEntries(C.map(c => [c.candidate_id, c.review.state]));
+function rowChips(c){
+  const out = [];
+  if (c.gate.status === "suppressed") out.push(`<span class="chip supp">suppressed</span>`);
+  else if (c.gate.status === "protection_only") out.push(`<span class="chip prot">protection only</span>`);
+  else if (c.coverage === "no_existing_rule")
+    out.push(`<span class="chip ${review[c.candidate_id]==="approved"?"new":""}">no existing rule</span>`);
+  else out.push(`<span class="chip">${esc(COV[c.coverage])}</span>`);
+  if (c.gate.status === "pass" && review[c.candidate_id] !== "approved") out.push(`<span class="chip silent">silent</span>`);
+  return out.join("");
+}
+function renderLedger(sel){
+  $("#ledger").innerHTML = C.map(c => {
+    const vl = validatedLead(c.candidate_id);
+    const lead = vl ? `${Math.round(vl.median_true_lead_days)} days early` : "no validated lead";
+    return `<button class="row ${c.gate.status!=="pass"?"blocked":""}" data-id="${esc(c.candidate_id)}" aria-current="${c.candidate_id===sel}">
+      <span class="num">${esc(c.candidate_id.slice(1))}</span>
+      <span><span class="ttl">${esc(c.title)}</span><span class="sub">${c.size} households, ${lead}</span></span>
+      <span class="chips">${rowChips(c)}</span></button>`;
+  }).join("");
+  document.querySelectorAll(".row").forEach(r => r.addEventListener("click", () => select(r.dataset.id)));
+}
+function select(id){
+  const c = C.find(x => x.candidate_id === id);
+  renderLedger(id);
+  const vl = validatedLead(id);
+  const m = MATCH[id];
+  const maxw = Math.max(...c.top_features.map(t => Math.abs(t.weight)), 1);
+  const gcls = {pass:"pass", protection_only:"prot", suppressed:"supp"}[c.gate.status];
+  const gtext = {
+    pass: "Nothing in what moved relies on health, separation or financial distress evidence, so a reviewer may approve this for Kate.",
+    protection_only: `The signature leans on ${esc(c.gate.reason)} evidence or implies a ${esc(c.gate.reason)} inference. Kate may prepare protective help, and may never sell against it.`,
+    suppressed: `The signature leans on ${esc((c.gate.reason||"").replace("_"," "))} evidence. Blocked before any person could see it as an opportunity. Kate says nothing commercial.`
+  }[c.gate.status];
+  const state = review[id];
+  $("#detail").innerHTML = `
+    <div class="chips" style="justify-content:flex-start">${rowChips(c)}</div>
+    <h2 style="margin-top:10px">${esc(c.title)}</h2>
+    <p>${esc(c.description)}</p>
+    <div class="lead-num">${vl ? Math.round(vl.median_true_lead_days) + " days" : "n/a"}</div>
+    <div class="lead-lab">validated lead time on households the engine never saw${vl ? `, ${Math.round(vl.share_detected_before_event*100)}% seen before the event` : ""}</div>
+    <div class="stats">
+      <div class="stat"><b>${c.size}</b><span>households in cohort</span></div>
+      <div class="stat"><b>${c.stability.toFixed(2)}</b><span>stability across time</span></div>
+      <div class="stat"><b>${Math.round(c.median_lead_days)}d</b><span>pipeline's own estimate</span></div>
+    </div>
+    <div class="sig"><h3>What moved, relative to each household's own normal</h3>
+      ${c.top_features.map(t => `<div class="bar"><span>${esc(featLabel(t.feature))}</span>
+        <span class="track"><span class="fill ${t.weight<0?"neg":""}" style="width:${Math.round(Math.abs(t.weight)/maxw*100)}%"></span></span></div>`).join("")}
+    </div>
+    <div class="gatebox ${gcls}"><b>Gate: ${esc(GATE[c.gate.status])}.</b> ${gtext}</div>
+    <div class="actions">
+      <button class="btn primary" id="approve" ${c.gate.status!=="pass"||state==="approved"?"disabled":""}>${state==="approved"?"Approved":"Approve for Kate"}</button>
+      <button class="btn" id="hold" ${c.gate.status!=="pass"||state!=="approved"?"disabled":""}>Keep silent</button>
+    </div>
+    <p class="note">Nothing reaches a customer without a reviewer's approval. Review changes here are local to this demo.</p>
+    ${m ? `<div class="valid">Validation, from the sealed answer key: this cohort was <b>${Math.round(m.purity*100)}% ${esc(m.majority.replace(/_/g," "))}</b> across ${m.size} training households.</div>` : ""}`;
+  const a = $("#approve"), h = $("#hold");
+  if (a) a.onclick = () => { review[id] = "approved"; select(id); };
+  if (h) h.onclick = () => { review[id] = "pending"; select(id); };
+}
+renderLedger(C[0].candidate_id); select(C[0].candidate_id);
+
+// ---------- silence ----------
+function dots(canvas, counts){
+  const ctx = canvas.getContext("2d"), W = canvas.width, H = canvas.height;
+  ctx.clearRect(0,0,W,H);
+  const n = counts.reduce((a,b)=>a+b[0],0);
+  const cols = 67, rows = Math.ceil(n/cols), s = Math.min(W/cols, H/rows), g = Math.max(1, s*0.18);
+  let i = 0;
+  for (const [k, col] of counts){
+    ctx.fillStyle = col;
+    for (let j=0;j<k;j++,i++){
+      const x = (i%cols)*s, y = Math.floor(i/cols)*s;
+      ctx.fillRect(x, y, s-g, s-g);
+    }
+  }
+}
+function drawSilence(){
+  const c = R.contact, n = c.holdout_households;
+  const A = c.baseline_any_change, B = c.ours;
+  $("#s-a-num").textContent = A.messages.toLocaleString();
+  $("#s-b-num").textContent = B.messages.toLocaleString();
+  const P = css("--purple"), NV = css("--navy"), LV = css("--lav"), PL = css("--pale");
+  const aWrong = A.messages - A.correct - A.sent_to_separating_or_distressed;
+  dots($("#grid-a"), [[A.correct,P],[A.sent_to_separating_or_distressed,NV],[aWrong,LV],[n-A.messages,PL]]);
+  const bWrong = B.messages - B.correct - B.sent_to_separating_or_distressed;
+  dots($("#grid-b"), [[B.correct,P],[B.sent_to_separating_or_distressed,NV],[bWrong,LV],[n-B.messages,PL]]);
+  const kv = (x) => `<dt>Right moment</dt><dd>${Math.round(x.precision*100)}%</dd>
+    <dt>Sent to separating or distressed households</dt><dd>${x.sent_to_separating_or_distressed}</dd>
+    <dt>Sent to planted lookalikes</dt><dd>${x.sent_to_hard_negatives}</dd>`;
+  $("#s-a-kv").innerHTML = kv(A);
+  $("#s-b-kv").innerHTML = kv(B) + `<dt>Fewer messages</dt><dd>${Math.round(c.message_reduction_vs_any_change*100)}%</dd>`;
+}
+matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", () => { if ($("#v-sil").classList.contains("on")) drawSilence(); });
+
+// ---------- one household ----------
+let cur = 0, timer = null;
+const KIND = {going_self_employed:"Going self-employed", hard_negative:"A lookalike", financial_distress:"Financial distress", control:"Ordinary household"};
+$("#hh-pick").innerHTML = D.map((d,i) => `<button data-i="${i}" aria-pressed="${i===0}"><b>${esc(KIND[d.truth]||d.truth)}</b><span>${esc(d.household_id)} · ${esc(d.archetype.replace(/_/g," "))}</span></button>`).join("");
+document.querySelectorAll("#hh-pick button").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll("#hh-pick button").forEach(x => x.setAttribute("aria-pressed", x===b));
+  cur = +b.dataset.i; drawHH(D[cur].weeks.length, false);
+}));
+function xy(d){
+  const W=960,H=300,pl=44,pr=16,pt=16,pb=34, n=d.weeks.length;
+  const ymax = Math.max(d.threshold*1.6, ...d.score) * 1.05;
+  return {W,H,pl,pr,pt,pb,n,ymax,
+    x:i=>pl+(W-pl-pr)*i/(n-1), y:v=>pt+(H-pt-pb)*(1-v/ymax)};
+}
+function idxOf(d, iso){ if(!iso) return -1; let best=0; d.weeks.forEach((w,i)=>{ if(Math.abs(new Date(w)-new Date(iso)) < Math.abs(new Date(d.weeks[best])-new Date(iso))) best=i; }); return best; }
+function drawHH(upto, revealed){
+  const d = D[cur], g = xy(d), P=css("--purple"), L=css("--line"), M=css("--muted"), I=css("--ink"), LV=css("--lav");
+  const bi = idxOf(d, d.bend_date), ei = idxOf(d, d.true_event_date);
+  const pts = d.score.slice(0, upto).map((v,i)=>`${g.x(i).toFixed(1)},${g.y(v).toFixed(1)}`).join(" ");
+  let s = `<line x1="${g.pl}" x2="${g.W-g.pr}" y1="${g.y(d.threshold)}" y2="${g.y(d.threshold)}" stroke="${M}" stroke-dasharray="4 5"/>
+    <text x="${g.W-g.pr}" y="${g.y(d.threshold)-6}" fill="${M}" font-size="12" text-anchor="end">threshold</text>`;
+  [[0,"start"], [Math.floor(g.n/2),"middle"], [g.n-1,"end"]].forEach(([i,a]) => s += `<text x="${g.x(i)}" y="${g.H-10}" fill="${M}" font-size="12" text-anchor="${a}">${d.weeks[i].slice(0,7)}</text>`);
+  s += `<polyline fill="none" stroke="${P}" stroke-width="2.5" stroke-linejoin="round" points="${pts}"/>`;
+  if (bi >= 0 && upto > bi){
+    s += `<circle cx="${g.x(bi)}" cy="${g.y(d.score[bi])}" r="6" fill="${P}"/>
+      <text x="${g.x(bi)}" y="${g.y(d.score[bi])-12}" fill="${I}" font-size="13" text-anchor="middle" font-weight="600">${d.decision==="ask"?"Kate asks":"stays silent"}</text>`;
+  }
+  if (revealed && ei >= 0){
+    s += `<line x1="${g.x(ei)}" x2="${g.x(ei)}" y1="${g.pt}" y2="${g.H-g.pb}" stroke="${I}" stroke-width="2"/>
+      <text x="${g.x(ei)+6}" y="${g.pt+14}" fill="${I}" font-size="13">${d.truth==="going_self_employed"?"salary stops":"event"}</text>`;
+    if (bi >= 0){
+      const dd = Math.round((new Date(d.weeks[ei]) - new Date(d.weeks[bi]))/864e5);
+      s += `<line x1="${g.x(bi)}" x2="${g.x(ei)}" y1="${g.H-g.pb-10}" y2="${g.H-g.pb-10}" stroke="${LV}" stroke-width="3"/>
+        <text x="${(g.x(bi)+g.x(ei))/2}" y="${g.H-g.pb-18}" fill="${I}" font-size="13" text-anchor="middle" font-weight="600">${Math.abs(dd)} days ${dd>=0?"early":"late"}</text>`;
+    }
+  }
+  $("#hh-svg").innerHTML = s;
+  $("#st1").classList.toggle("lit", upto > 3);
+  const fired = bi >= 0 && upto > bi;
+  $("#st2").classList.toggle("lit", fired || (bi < 0 && upto >= d.weeks.length));
+  $("#st2t").textContent = fired
+    ? `${d.bend_date}: sustained departure. ${d.signature.slice(0,3).map(t=>featLabel(t.feature)).join("; ")}. Kate's decision: ${d.decision==="ask"?"ask once":"stay silent"}. Reason: ${d.decision_reason}.`
+    : (bi < 0 && upto >= d.weeks.length ? "No sustained departure from its own normal. Nothing is said." : "Waiting.");
+  $("#st3").classList.toggle("lit", revealed);
+  if (revealed){
+    const days = (bi>=0 && ei>=0) ? Math.round((new Date(d.weeks[ei]) - new Date(d.weeks[bi]))/864e5) : null;
+    $("#st3t").textContent = d.true_event_date
+      ? `${esc(KIND[d.truth])} on ${d.true_event_date}.${days!==null ? ` Seen ${days} days ${days>=0?"before":"after"} it happened.` : ""} ${esc(d.caption)}.`
+      : `${esc(d.caption)}.`;
+  } else $("#st3t").textContent = "Hidden until you reveal it. The engine never saw this.";
+  $("#reveal").disabled = upto < d.weeks.length;
+}
+$("#play").addEventListener("click", () => {
+  clearInterval(timer); const d = D[cur]; let k = 2;
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reduce){ drawHH(d.weeks.length, false); return; }
+  timer = setInterval(() => { drawHH(k, false); if (++k > d.weeks.length) clearInterval(timer); }, 110);
+});
+$("#reveal").addEventListener("click", () => drawHH(D[cur].weeks.length, true));
+drawHH(2, false);
+
+// ---------- method ----------
+const h = R.headline;
+$("#method").innerHTML = [
+  [`${h.patterns_recovered} of ${h.patterns_planted}`, "hidden life patterns recovered, with no labels"],
+  [`${Math.round(h.headline_median_lead_days_holdout)} days`, "median warning before a salary stops, on unseen households"],
+  [`${Object.values(R.gate).filter(g=>g.correct).length} of ${Object.keys(R.gate).length}`, "cohorts the gate handled correctly"],
+  [`${R.controls.mean_cohort_purity_real.toFixed(2)} vs ${R.controls.mean_cohort_purity_shuffled.toFixed(2)}`, "cohort purity, real labels vs shuffled. Shuffled equals chance"],
+].map(([b,s]) => `<div class="m"><b>${b}</b><span>${s}</span></div>`).join("");
+const LT = R.lead_time;
+$("#lead-table").innerHTML = `<tr><th>Life pattern</th><th class="r">Households</th><th class="r">Median lead</th><th class="r">Seen before event</th><th>Gate</th></tr>` +
+  Object.entries(LT).filter(([,v])=>v.holdout).map(([p,v]) =>
+    `<tr><td>${esc(p.replace(/_/g," "))}</td><td class="r">${v.holdout.n}</td><td class="r">${v.holdout.median_true_lead_days>=0 ? Math.round(v.holdout.median_true_lead_days)+" days before" : Math.round(-v.holdout.median_true_lead_days)+" days after"}</td>
+     <td class="r">${Math.round(v.holdout.share_detected_before_event*100)}%</td><td>${esc((R.gate[p]?.got||[]).map(x=>GATE[x]||x).join(", "))}</td></tr>`).join("") +
+  `<tr><td>subscription creep</td><td class="r">-</td><td class="r">not found</td><td class="r">-</td><td>too common in ordinary life to separate</td></tr>`;
+$("#caveat").textContent = R.caveat + " The supervised benchmark scores near 0.99 ROC-AUC for the same reason: the pattern was planted cleanly. Real households mix several changes at once.";
+</script>
+</body>
+</html>

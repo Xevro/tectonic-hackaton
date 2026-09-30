@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Situation 141 · discovery console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F7F7FB; --panel:#FFFFFF; --ink:#14173A; --soft:#3A3F66; --muted:#5A5F84;
+  --line:#E2E3F0; --purple:#6C5CE7; --purple-ink:#4B3FBF; --lav:#A9AEF2; --navy:#14173A;
+  --chip:#EEEEF6; --pale:#DCDDEE;
+  --display:'Space Grotesk', 'Helvetica Neue', Arial, sans-serif;
+  --body:'Inter', 'Helvetica Neue', Arial, sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F1230; --panel:#161A40; --ink:#F2F2FA; --soft:#C9CBE6; --muted:#9096C4;
+    --line:#262B5C; --purple:#8B7FF0; --purple-ink:#A9AEF2; --lav:#A9AEF2; --navy:#0B0D26;
+    --chip:#20255A; --pale:#2A2F66;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F1230; --panel:#161A40; --ink:#F2F2FA; --soft:#C9CBE6; --muted:#9096C4;
+  --line:#262B5C; --purple:#8B7FF0; --purple-ink:#A9AEF2; --lav:#A9AEF2; --navy:#0B0D26;
+  --chip:#20255A; --pale:#2A2F66;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 var(--body);-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--purple);outline-offset:2px;border-radius:6px}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 24px 64px}
+
+/* header: the ledger count is the one bold element */
+.head{display:grid;grid-template-columns:auto 1fr;gap:28px;align-items:end;padding-bottom:22px;border-bottom:1px solid var(--line)}
+.count{font:700 88px/0.9 var(--display);letter-spacing:-2px;color:var(--ink);white-space:nowrap}
+.count .plus{color:var(--purple)}
+.head h1{margin:0 0 6px;font:600 22px/1.25 var(--display)}
+.head p{margin:0;color:var(--soft);max-width:62ch}
+
+nav{display:flex;gap:4px;margin:18px 0 22px;flex-wrap:wrap}
+nav button{background:none;border:1px solid transparent;padding:8px 14px;border-radius:999px;cursor:pointer;color:var(--muted);font-weight:500}
+nav button[aria-selected="true"]{background:var(--ink);color:var(--bg)}
+nav button:hover:not([aria-selected="true"]){border-color:var(--line);color:var(--ink)}
+
+.view{display:none}.view.on{display:block}
+
+/* situations ledger */
+.split{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:20px;align-items:start}
+.ledger{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.row{display:grid;grid-template-columns:64px 1fr auto;gap:14px;align-items:center;width:100%;text-align:left;
+  background:none;border:0;border-top:1px solid var(--line);padding:14px 16px;cursor:pointer}
+.row:first-child{border-top:0}
+.row:hover{background:var(--chip)}
+.row[aria-current="true"]{background:var(--chip);box-shadow:inset 3px 0 0 var(--purple)}
+.num{font:700 26px/1 var(--display);color:var(--ink);font-variant-numeric:tabular-nums}
+.row.blocked .num{color:var(--muted)}
+.ttl{font-weight:500;line-height:1.35}
+.sub{display:block;color:var(--muted);font-size:13px;margin-top:3px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.chip{font-size:12px;padding:3px 9px;border-radius:999px;background:var(--chip);color:var(--soft);white-space:nowrap}
+.chip.new{background:var(--purple);color:#fff}
+.chip.prot{background:var(--lav);color:#14173A}
+.chip.supp{background:var(--navy);color:#fff}
+.chip.silent{background:transparent;border:1px solid var(--line)}
+
+.detail{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;position:sticky;top:16px}
+.detail h2{margin:0 0 4px;font:600 21px/1.3 var(--display)}
+.detail .lead-num{font:700 44px/1 var(--display);margin:18px 0 2px}
+.detail .lead-lab{color:var(--muted);font-size:13px}
+.detail p{color:var(--soft);margin:10px 0}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:18px 0}
+.stat{border-top:1px solid var(--line);padding-top:8px}
+.stat b{display:block;font:600 19px/1.2 var(--display)}
+.stat span{color:var(--muted);font-size:12px}
+.sig{margin:14px 0 4px}
+.sig h3,.detail h3{font:600 14px/1.3 var(--display);margin:18px 0 8px}
+.bar{display:grid;grid-template-columns:1fr 120px;gap:10px;align-items:center;font-size:13px;margin:6px 0}
+.bar .track{display:block;height:8px;background:var(--chip);border-radius:4px;overflow:hidden}
+.bar .fill{display:block;height:100%;background:var(--purple)}
+.bar .fill.neg{background:var(--lav)}
+.gatebox{border-radius:10px;padding:12px 14px;margin:16px 0;font-size:14px}
+.gatebox.pass{background:var(--chip)}
+.gatebox.prot{background:var(--lav);color:#14173A}
+.gatebox.supp{background:var(--navy);color:#fff}
+.actions{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:var(--panel);padding:9px 16px;border-radius:999px;cursor:pointer;font-weight:500}
+.btn.primary{background:var(--purple);border-color:var(--purple);color:#fff}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.note{font-size:12px;color:var(--muted);margin-top:12px}
+.valid{margin-top:16px;border-top:1px dashed var(--line);padding-top:12px;font-size:13px;color:var(--muted)}
+.valid b{color:var(--ink)}
+
+/* silence */
+.silence-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.pane{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px}
+.pane h2{margin:0;font:600 18px/1.3 var(--display)}
+.pane .big{font:700 52px/1 var(--display);margin:14px 0 4px;font-variant-numeric:tabular-nums}
+.pane .lab{color:var(--muted);font-size:13px}
+canvas{width:100%;height:auto;display:block;margin:14px 0 8px;border-radius:8px}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--muted);flex-wrap:wrap}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.kv{display:grid;grid-template-columns:1fr auto;gap:6px 16px;margin-top:12px;font-size:14px}
+.kv dt{color:var(--soft)}.kv dd{margin:0;font-weight:600;text-align:right;font-variant-numeric:tabular-nums}
+
+/* household */
+.hh-pick{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.hh-pick button{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:9px 12px;cursor:pointer;text-align:left;max-width:260px}
+.hh-pick button[aria-pressed="true"]{border-color:var(--purple);box-shadow:inset 0 0 0 1px var(--purple)}
+.hh-pick b{display:block;font:600 14px/1.2 var(--display)}
+.hh-pick span{font-size:12px;color:var(--muted)}
+.chart-box{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+.chart-box svg{width:100%;height:auto;display:block}
+.story{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:14px}
+.story .step{border-top:2px solid var(--line);padding-top:10px;font-size:14px;color:var(--soft);transition:border-color .3s}
+.story .step.lit{border-color:var(--purple);color:var(--ink)}
+.story .step b{display:block;font:600 14px/1.3 var(--display);color:var(--ink);margin-bottom:3px}
+
+/* method */
+.method{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.m{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+.m b{display:block;font:700 34px/1 var(--display);margin-bottom:6px}
+.m span{color:var(--soft);font-size:14px}
+.caveat{margin-top:18px;background:var(--chip);border-radius:12px;padding:14px 16px;color:var(--soft);font-size:14px;max-width:80ch}
+table{width:100%;border-collapse:collapse;font-size:14px;margin-top:18px;background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+th,td{text-align:left;padding:10px 14px;border-top:1px solid var(--line)}
+th{font:600 13px/1.3 var(--display);color:var(--muted);border-top:0;background:var(--chip)}
+td.r,th.r{text-align:right;font-variant-numeric:tabular-nums}
+.scroll{overflow-x:auto}
+
+@media (max-width:860px){
+  .split,.silence-grid{grid-template-columns:1fr}
+  .detail{position:static}
+  .method{grid-template-columns:repeat(2,1fr)}
+  .count{font-size:64px}
+  .head{grid-template-columns:1fr}
+  .story{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion: reduce){ *{transition:none!important;animation:none!important} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="head">
+    <div class="count" aria-label="140 plus discovered situations"><span id="c140">140</span><span class="plus" id="cplus"></span></div>
+    <div>
+      <h1>Situation 141</h1>
+      <p id="lede">Kate's 140 situations were each written by a person. These were found in synthetic households with no labels, then reviewed here before any customer hears about them.</p>
+    </div>
+  </header>
+
+  <nav role="tablist" aria-label="Views">
+    <button role="tab" aria-selected="true" data-v="sit">Situations</button>
+    <button role="tab" aria-selected="false" data-v="sil">Silence</button>
+    <button role="tab" aria-selected="false" data-v="hh">One household</button>
+    <button role="tab" aria-selected="false" data-v="met">How we checked</button>
+  </nav>
+
+  <!-- SITUATIONS -->
+  <section class="view on" id="v-sit" role="tabpanel">
+    <div class="split">
+      <div class="ledger" id="ledger"></div>
+      <aside class="detail" id="detail" aria-live="polite"></aside>
+    </div>
+  </section>
+
+  <!-- SILENCE -->
+  <section class="view" id="v-sil" role="tabpanel">
+    <div class="silence-grid">
+      <div class="pane">
+        <h2>Speak whenever something changes</h2>
+        <div class="big" id="s-a-num"></div>
+        <div class="lab">messages to holdout households</div>
+        <canvas id="grid-a" width="560" height="340" aria-label="Households contacted when any change is detected"></canvas>
+        <dl class="kv" id="s-a-kv"></dl>
+      </div>
+      <div class="pane">
+        <h2>Speak only for approved situations</h2>
+        <div class="big" id="s-b-num"></div>
+        <div class="lab">messages to the same households</div>
+        <canvas id="grid-b" width="560" height="340" aria-label="Households contacted by Situation 141"></canvas>
+        <dl class="kv" id="s-b-kv"></dl>
+      </div>
+    </div>
+    <div class="legend" style="margin-top:14px">
+      <span><i style="background:var(--purple)"></i>contacted, and it was the right moment</span>
+      <span><i style="background:var(--navy)"></i>contacted a separating or distressed household</span>
+      <span><i style="background:var(--lav)"></i>contacted, wrong moment</span>
+      <span><i style="background:var(--pale)"></i>left alone</span>
+    </div>
+  </section>
+
+  <!-- ONE HOUSEHOLD -->
+  <section class="view" id="v-hh" role="tabpanel">
+    <div class="hh-pick" id="hh-pick"></div>
+    <div class="chart-box">
+      <svg id="hh-svg" viewBox="0 0 960 300" role="img" aria-label="Household departure score over time"></svg>
+      <div class="actions"><button class="btn primary" id="play">Play forward</button><button class="btn" id="reveal" disabled>Reveal what really happened</button></div>
+      <div class="story">
+        <div class="step" id="st1"><b>Its own normal</b><span id="st1t">The score measures how far this household has moved from its own past, never from anyone else's.</span></div>
+        <div class="step" id="st2"><b>The moment</b><span id="st2t">Waiting.</span></div>
+        <div class="step" id="st3"><b>What really happened</b><span id="st3t">Hidden until you reveal it. The engine never saw this.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- METHOD -->
+  <section class="view" id="v-met" role="tabpanel">
+    <div class="method" id="method"></div>
+    <div class="scroll"><table id="lead-table"></table></div>
+    <p class="caveat" id="caveat"></p>
+  </section>
+
+</div>
+
+<script>
+const DATA = {"candidates":[{"candidate_id":"S141","cohort_id":"C02","title":"Business equipment and an accountant","description":"366 households pay business equipment more often; start paying an accountant; start paying a social insurance fund; start paying enterprise registration. The largest change in recurring income or fixed costs follows a median of 84 days later (pipeline estimate).","size":366,"median_lead_days":84.0,"coverage":"no_existing_rule","rank_score":5.4896,"stability":0.996,"top_features":[{"feature":"business_equipment__amount_z","weight":3.087},{"feature":"business_equipment__new","weight":2.66},{"feature":"accountant_fee__new","weight":2.078},{"feature":"social_insurance_fund__new","weight":2.049},{"feature":"enterprise_counter_fee__new","weight":2.049},{"feature":"app_loan_screen__new","weight":1.553}],"gate":{"status":"pass","reason":null},"review":{"state":"approved","reviewer":null,"decided_at":null}},{"candidate_id":"S142","cohort_id":"C05","title":"Property platforms and loan screens in the app","description":"95 households pay property platforms more often; start using loan screens in the app; start using the mortgage simulator; start paying a notary escrow deposit. The largest change in recurring income or fixed costs follows a median of 98 days later (pipeline estimate).","size":95,"median_lead_days":98.0,"coverage":"existing_rule","rank_score":1.0773,"stability":0.867,"top_features":[{"feature":"property_platform__amount_z","weight":2.464},{"feature":"property_platform__rate_z","weight":1.976},{"feature":"app_loan_screen__new","weight":1.595},{"feature":"property_platform__new","weight":1.5},{"feature":"mortgage_simulator_session__new","weight":1.484},{"feature":"notary_escrow__new","weight":1.121}],"gate":{"status":"pass","reason":null},"review":{"state":"pending","reviewer":null,"decided_at":null}},{"candidate_id":"S143","cohort_id":"C04","title":"Garage repairs and roadside assistance","description":"97 households pay garage repairs more often; start paying roadside assistance; start receiving one-off windfalls; start using loan screens in the app. The largest change in recurring income or fixed costs follows a median of 14 days later (pipeline estimate).","size":97,"median_lead_days":14.0,"coverage":"existing_rule","rank_score":0.1781,"stability":0.999,"top_features":[{"feature":"garage_repair__amount_z","weight":5.575},{"feature":"garage_repair__new","weight":2.397},{"feature":"garage_repair__rate_z","weight":1.384},{"feature":"roadside_assistance__new","weight":1.361},{"feature":"windfall_in__new","weight":0.588},{"feature":"app_loan_screen__new","weight":0.448}],"gate":{"status":"pass","reason":null},"review":{"state":"pending","reviewer":null,"decided_at":null}},{"candidate_id":"S144","cohort_id":"C00","title":"Care transport and home care","description":"209 households pay care transport more often; pay home care more often; pay an elder care provider more often. The largest change in recurring income or fixed costs follows a median of 14 days later (pipeline estimate).","size":209,"median_lead_days":14.0,"coverage":"no_existing_rule","rank_score":0.0,"stability":0.998,"top_features":[{"feature":"care_transport__amount_z","weight":3.546},{"feature":"home_care_service__amount_z","weight":2.663},{"feature":"care_transport__rate_z","weight":2.033},{"feature":"home_care_service__new","weight":1.981},{"feature":"elder_care_provider__amount_z","weight":1.412},{"feature":"care_transport__new","weight":1.163}],"gate":{"status":"protection_only","reason":"health"},"review":{"state":"blocked","reviewer":null,"decided_at":null}},{"candidate_id":"S145","cohort_id":"C01","title":"Irregular client payments and travel","description":"121 households receive more irregular client payments; start paying travel; start paying coworking space; start paying professional liability cover. The largest change in recurring income or fixed costs follows a median of 0 days later (pipeline estimate).","size":121,"median_lead_days":0.0,"coverage":"no_existing_rule","rank_score":0.0,"stability":0.999,"top_features":[{"feature":"client_payment_in__amount_z","weight":5.913},{"feature":"client_payment_in__new","weight":2.653},{"feature":"client_payment_in__rate_z","weight":2.263},{"feature":"travel__new","weight":0.372},{"feature":"coworking_out__new","weight":0.186},{"feature":"professional_liability_ins__new","weight":0.174}],"gate":{"status":"pass","reason":null},"review":{"state":"pending","reviewer":null,"decided_at":null}},{"candidate_id":"S146","cohort_id":"C03","title":"Baby shops and insurance screens in the app","description":"147 households pay baby shops more often; start using insurance screens in the app; pay prenatal care more often; start paying childcare. The largest change in recurring income or fixed costs follows a median of 84 days later (pipeline estimate).","size":147,"median_lead_days":84.0,"coverage":"partial_rule","rank_score":0.0,"stability":0.987,"top_features":[{"feature":"baby_retail__amount_z","weight":5.54},{"feature":"baby_retail__rate_z","weight":2.634},{"feature":"baby_retail__new","weight":1.796},{"feature":"app_insurance_screen__new","weight":1.52},{"feature":"prenatal_care_out__amount_z","weight":0.667},{"feature":"childcare_out__new","weight":0.52}],"gate":{"status":"protection_only","reason":"health"},"review":{"state":"blocked","reviewer":null,"decided_at":null}},{"candidate_id":"S147","cohort_id":"C06","title":"One-off windfalls and travel","description":"67 households receive more one-off windfalls; start paying travel; start paying fitness subscriptions. The largest change in recurring income or fixed costs follows a median of 0 days later (pipeline estimate).","size":67,"median_lead_days":0.0,"coverage":"no_existing_rule","rank_score":0.0,"stability":0.725,"top_features":[{"feature":"windfall_in__amount_z","weight":5.469},{"feature":"windfall_in__new","weight":2.955},{"feature":"travel__new","weight":0.985},{"feature":"travel__amount_z","weight":0.617},{"feature":"windfall_in__rate_z","weight":0.472},{"feature":"subscription_fitness__new","weight":0.201}],"gate":{"status":"pass","reason":null},"review":{"state":"pending","reviewer":null,"decided_at":null}},{"candidate_id":"S148","cohort_id":"C07","title":"Legal fees and mediation","description":"58 households pay legal fees more often; start paying mediation; start paying rent. The largest change in recurring income or fixed costs follows a median of 42 days later (pipeline estimate).","size":58,"median_lead_days":42.0,"coverage":"no_existing_rule","rank_score":0.0,"stability":0.716,"top_features":[{"feature":"legal_fee__amount_z","weight":5.324},{"feature":"legal_fee__new","weight":2.198},{"feature":"mediation_fee__new","weight":1.94},{"feature":"legal_fee__rate_z","weight":1.297},{"feature":"mediation_fee__amount_z","weight":0.864},{"feature":"rent_out__new","weight":0.543}],"gate":{"status":"suppressed","reason":"separation"},"review":{"state":"blocked","reviewer":null,"decided_at":null}},{"candidate_id":"S149","cohort_id":"C08","title":"Overdraft interest and balance checks","description":"144 households pay overdraft interest more often; use balance checks far more often; pay failed direct debits more often; start paying debt collection. The largest change in recurring income or fixed costs follows a median of 112 days later (pipeline estimate).","size":144,"median_lead_days":112.0,"coverage":"no_existing_rule","rank_score":0.0,"stability":0.998,"top_features":[{"feature":"overdraft_interest__amount_z","weight":5.545},{"feature":"overdraft_interest__rate_z","weight":4.64},{"feature":"app_balance_check__rate_z","weight":2.889},{"feature":"failed_direct_debit__rate_z","weight":1.077},{"feature":"debt_collection_out__new","weight":0.312},{"feature":"overdraft_interest__new","weight":0.167}],"gate":{"status":"suppressed","reason":"financial_distress"},"review":{"state":"blocked","reviewer":null,"decided_at":null}},{"candidate_id":"S150","cohort_id":"C09","title":"Balance checks and overdraft interest","description":"67 households use balance checks far more often; start paying overdraft interest; start paying failed direct debits. The largest change in recurring income or fixed costs follows a median of 77 days later (pipeline estimate).","size":67,"median_lead_days":77.0,"coverage":"no_existing_rule","rank_score":0.0,"stability":0.998,"top_features":[{"feature":"app_balance_check__rate_z","weight":5.787},{"feature":"overdraft_interest__new","weight":2.619},{"feature":"failed_direct_debit__new","weight":2.306},{"feature":"overdraft_interest__amount_z","weight":0.626},{"feature":"overdraft_interest__rate_z","weight":0.255},{"feature":"failed_direct_debit__rate_z","weight":0.109}],"gate":{"status":"suppressed","reason":"financial_distress"},"review":{"state":"blocked","reviewer":null,"decided_at":null}}],"report":{"headline":{"patterns_planted":8,"patterns_recovered":7,"recovered":["going_self_employed","first_home_purchase","new_child","vehicle_replacement","caring_for_ageing_parent","separation","financial_distress"],"missed":["subscription_creep"],"headline_event":"going_self_employed","headline_median_lead_days_holdout":56.0,"false_cohorts":2,"cohorts_suppressed_or_protected":5},"discovery":{"going_self_employed":{"recovered":true,"cohorts":["S141"],"purity":0.926,"train_households":389,"captured_in_cohort":339,"capture_rate":0.871},"first_home_purchase":{"recovered":true,"cohorts":["S142"],"purity":1.0,"train_households":315,"captured_in_cohort":95,"capture_rate":0.302},"new_child":{"recovered":true,"cohorts":["S146"],"purity":1.0,"train_households":281,"captured_in_cohort":147,"capture_rate":0.523},"vehicle_replacement":{"recovered":true,"cohorts":["S143"],"purity":0.773,"train_households":409,"captured_in_cohort":75,"capture_rate":0.183},"subscription_creep":{"recovered":false,"cohorts":[],"purity":0.0,"train_households":632,"captured_in_cohort":0,"capture_rate":0.0},"caring_for_ageing_parent":{"recovered":true,"cohorts":["S144"],"purity":1.0,"train_households":243,"captured_in_cohort":209,"capture_rate":0.86},"separation":{"recovered":true,"cohorts":["S148"],"purity":1.0,"train_households":201,"captured_in_cohort":58,"capture_rate":0.289},"financial_distress":{"recovered":true,"cohorts":["S149","S150"],"purity":1.0,"train_households":319,"captured_in_cohort":211,"capture_rate":0.661}},"cohort_composition":{"S141":{"majority":"going_self_employed","purity":0.926,"size":366,"mix":{"going_self_employed":339,"hard_negative":27}},"S142":{"majority":"first_home_purchase","purity":1.0,"size":95,"mix":{"first_home_purchase":95}},"S143":{"majority":"vehicle_replacement","purity":0.773,"size":97,"mix":{"hard_negative":22,"vehicle_replacement":75}},"S144":{"majority":"caring_for_ageing_parent","purity":1.0,"size":209,"mix":{"caring_for_ageing_parent":209}},"S145":{"majority":"hard_negative","purity":0.702,"size":121,"mix":{"going_self_employed":36,"hard_negative":85}},"S146":{"majority":"new_child","purity":1.0,"size":147,"mix":{"new_child":147}},"S147":{"majority":"control","purity":0.537,"size":67,"mix":{"caring_for_ageing_parent":4,"control":36,"financial_distress":1,"first_home_purchase":2,"going_self_employed":2,"hard_negative":5,"new_child":3,"separation":3,"subscription_creep":8,"vehicle_replacement":3}},"S148":{"majority":"separation","purity":1.0,"size":58,"mix":{"separation":58}},"S149":{"majority":"financial_distress","purity":1.0,"size":144,"mix":{"financial_distress":144}},"S150":{"majority":"financial_distress","purity":1.0,"size":67,"mix":{"financial_distress":67}}},"false_cohorts":{"ids":["S145","S147"],"gate_status":{"S145":"pass","S147":"pass"}},"lead_time":{"going_self_employed":{"train":{"n":339,"median_true_lead_days":56.0,"p25":42.0,"p75":63.0,"share_detected_before_event":0.965},"holdout":{"n":129,"median_true_lead_days":56.0,"p25":49.0,"p75":63.0,"share_detected_before_event":0.984},"pipeline_estimate_days":84.0},"first_home_purchase":{"train":{"n":95,"median_true_lead_days":63.0,"p25":-14.0,"p75":84.0,"share_detected_before_event":0.632},"holdout":{"n":27,"median_true_lead_days":77.0,"p25":-14.0,"p75":87.5,"share_detected_before_event":0.667},"pipeline_estimate_days":98.0},"new_child":{"train":{"n":147,"median_true_lead_days":42.0,"p25":-42.0,"p75":63.0,"share_detected_before_event":0.68},"holdout":{"n":52,"median_true_lead_days":24.5,"p25":-49.0,"p75":56.0,"share_detected_before_event":0.615},"pipeline_estimate_days":84.0},"vehicle_replacement":{"train":{"n":75,"median_true_lead_days":105.0,"p25":70.0,"p75":126.0,"share_detected_before_event":0.973},"holdout":{"n":27,"median_true_lead_days":119.0,"p25":91.0,"p75":133.0,"share_detected_before_event":1.0},"pipeline_estimate_days":14.0},"caring_for_ageing_parent":{"train":{"n":209,"median_true_lead_days":56.0,"p25":14.0,"p75":77.0,"share_detected_before_event":0.789},"holdout":{"n":77,"median_true_lead_days":63.0,"p25":35.0,"p75":84.0,"share_detected_before_event":0.922},"pipeline_estimate_days":14.0},"separation":{"train":{"n":58,"median_true_lead_days":56.0,"p25":8.75,"p75":77.0,"share_detected_before_event":0.759},"holdout":{"n":23,"median_true_lead_days":49.0,"p25":14.0,"p75":66.5,"share_detected_before_event":0.826},"pipeline_estimate_days":42.0},"financial_distress":{"train":{"n":211,"median_true_lead_days":-42.0,"p25":-56.0,"p75":105.0,"share_detected_before_event":0.355},"holdout":{"n":88,"median_true_lead_days":-49.0,"p25":-56.0,"p75":105.0,"share_detected_before_event":0.295},"pipeline_estimate_days":94.5}},"gate":{"going_self_employed":{"expected":"pass","got":["pass"],"correct":true},"first_home_purchase":{"expected":"pass","got":["pass"],"correct":true},"new_child":{"expected":"protection_only","got":["protection_only"],"correct":true},"vehicle_replacement":{"expected":"pass","got":["pass"],"correct":true},"caring_for_ageing_parent":{"expected":"protection_only","got":["protection_only"],"correct":true},"separation":{"expected":"suppressed","got":["suppressed"],"correct":true},"financial_distress":{"expected":"suppressed","got":["suppressed"],"correct":true}},"holdout":{"going_self_employed":{"assigned":135,"precision":0.956,"recall":0.801},"first_home_purchase":{"assigned":27,"precision":1.0,"recall":0.2},"new_child":{"assigned":52,"precision":1.0,"recall":0.437},"vehicle_replacement":{"assigned":35,"precision":0.771,"recall":0.141},"caring_for_ageing_parent":{"assigned":77,"precision":1.0,"recall":0.72},"separation":{"assigned":23,"precision":1.0,"recall":0.232},"financial_distress":{"assigned":88,"precision":1.0,"recall":0.672}},"contact":{"holdout_households":3009,"ours":{"messages":135,"correct":129,"precision":0.956,"sent_to_separating_or_distressed":0,"sent_to_hard_negatives":6,"silent":2874},"baseline_any_change":{"messages":617,"correct":232,"precision":0.376,"sent_to_separating_or_distressed":152,"sent_to_hard_negatives":55},"baseline_everyone":{"messages":3009,"correct":755,"precision":0.251},"message_reduction_vs_any_change":0.781},"controls":{"mean_cohort_purity_real":0.894,"mean_cohort_purity_shuffled":0.278,"largest_class_base_rate":0.275},"supervised_ladder":{"task":"Will 'going_self_employed' happen within 12 weeks? Features cut 12 weeks before the event.","holdout_positives":161,"holdout_negatives":2848,"note":"A transformer sequence encoder (PRAGMA / nuFormer style) is the scale-up path; it was not trained here because torch was unavailable in the build environment. The interface is unchanged.","logistic_regression":{"roc_auc":0.99,"pr_auc":0.979,"base_rate":0.054,"precision_top_decile":0.527,"roc_auc_vs_hard_negatives_only":0.988,"lift_top_decile":9.8},"gradient_boosting":{"roc_auc":0.989,"pr_auc":0.968,"base_rate":0.054,"precision_top_decile":0.523,"roc_auc_vs_hard_negatives_only":0.988,"lift_top_decile":9.8},"warning":"ROC-AUC near 0.99 reflects how cleanly the pattern was PLANTED in synthetic data. It is not an estimate of real-world performance. Real households mix several changes at once and precision will be materially lower."},"lead_estimate_error_days":{"per_pattern":{"going_self_employed":28.0,"first_home_purchase":21.0,"new_child":59.5,"vehicle_replacement":-105.0,"caring_for_ageing_parent":-49.0,"separation":-7.0,"financial_distress":143.5},"mean_absolute_error":59.0,"note":"Pipeline's label-free lead estimate minus true holdout lead. Headline lead times are taken from the TRUE holdout values, never the estimate."},"lookalike_cohorts":{"S145":{"hard_negatives":85,"mixed_in_true_events":{"going_self_employed":36},"review_state":"pending"}},"caveat":"Synthetic data generated by this team. These results validate that the pipeline and method work end to end and recover planted structure. They are not evidence of real-world precision on KBC customers."},"meta":{"n_households":10000,"n_eval_points":41,"embed_dim":24,"threshold_quantile":0.97,"threshold":6.427,"n_bends":2143,"n_cohorts":10,"holdout_households":3009,"holdout_messaged":135,"holdout_prepared_quietly":129,"holdout_silent":2745,"seconds":15.4},"demo":[{"household_id":"HH009707","archetype":"dual_no_kids","caption":"The headline: registration payments while the salary still arrives","truth":"going_self_employed","weeks":["2024-06-17","2024-07-01","2024-07-15","2024-07-29","2024-08-12","2024-08-26","2024-09-09","2024-09-23","2024-10-07","2024-10-21","2024-11-04","2024-11-18","2024-12-02","2024-12-16","2024-12-30","2025-01-13","2025-01-27","2025-02-10","2025-02-24","2025-03-10","2025-03-24","2025-04-07","2025-04-21","2025-05-05","2025-05-19","2025-06-02","2025-06-16","2025-06-30","2025-07-14","2025-07-28","2025-08-11","2025-08-25","2025-09-08","2025-09-22","2025-10-06","2025-10-20","2025-11-03","2025-11-17","2025-12-01","2025-12-15","2025-12-29"],"score":[0.0,0.0,0.15000000596046448,0.4699999988079071,0.0,0.0,0.17000000178813934,0.1899999976158142,0.029999999329447746,1.1299999952316284,0.1599999964237213,0.20999999344348907,0.6700000166893005,0.07999999821186066,0.0,0.0,0.09000000357627869,0.0,0.0,4.900000095367432,5.75,7.769999980926514,7.769999980926514,5.590000152587891,4.829999923706055,3.7799999713897705,4.889999866485596,3.0799999237060547,4.360000133514404,7.380000114440918,7.130000114440918,9.0,8.489999771118164,8.420000076293945,8.260000228881836,3.1700000762939453,2.0199999809265137,1.350000023841858,0.7900000214576721,2.3399999141693115,1.1200000047683716],"threshold":6.427,"bend_date":"2025-04-21","candidate_id":"S141","decision":"ask","decision_reason":"approved situation, sustained bend","signature":[{"feature":"business_equipment__amount_z","weight":4.89},{"feature":"enterprise_counter_fee__new","weight":3.0},{"feature":"accountant_fee__new","weight":3.0},{"feature":"social_insurance_fund__new","weight":3.0},{"feature":"business_equipment__new","weight":3.0}],"true_event_date":"2025-06-29"},{"household_id":"HH009826","archetype":"young_starter","caption":"The headline: registration payments while the salary still arrives","truth":"going_self_employed","weeks":["2024-06-17","2024-07-01","2024-07-15","2024-07-29","2024-08-12","2024-08-26","2024-09-09","2024-09-23","2024-10-07","2024-10-21","2024-11-04","2024-11-18","2024-12-02","2024-12-16","2024-12-30","2025-01-13","2025-01-27","2025-02-10","2025-02-24","2025-03-10","2025-03-24","2025-04-07","2025-04-21","2025-05-05","2025-05-19","2025-06-02","2025-06-16","2025-06-30","2025-07-14","2025-07-28","2025-08-11","2025-08-25","2025-09-08","2025-09-22","2025-10-06","2025-10-20","2025-11-03","2025-11-17","2025-12-01","2025-12-15","2025-12-29"],"score":[0.03999999910593033,3.0,3.0,3.0,4.309999942779541,3.0899999141693115,3.0899999141693115,3.0999999046325684,0.0,0.0,0.550000011920929,0.0,0.0,0.0,0.05000000074505806,0.6000000238418579,0.0,0.4399999976158142,0.0,0.15000000596046448,0.0,0.0,0.0,0.0,0.36000001430511475,0.0,0.0,0.05999999865889549,3.0,3.0,5.21999979019165,5.980000019073486,7.960000038146973,8.34000015258789,7.090000152587891,7.079999923706055,4.659999847412109,6.75,7.539999961853027,8.739999771118164,7.849999904632568],"threshold":6.427,"bend_date":"2025-09-22","candidate_id":"S141","decision":"ask","decision_reason":"approved situation, sustained bend","signature":[{"feature":"business_equipment__new","weight":3.0},{"feature":"social_insurance_fund__new","weight":3.0},{"feature":"professional_liability_ins__new","weight":3.0},{"feature":"coworking_out__new","weight":3.0},{"feature":"accountant_fee__new","weight":3.0}],"true_event_date":"2025-10-25"},{"household_id":"HH003608","archetype":"single","caption":"The headline: registration payments while the salary still arrives","truth":"going_self_employed","weeks":["2024-06-17","2024-07-01","2024-07-15","2024-07-29","2024-08-12","2024-08-26","2024-09-09","2024-09-23","2024-10-07","2024-10-21","2024-11-04","2024-11-18","2024-12-02","2024-12-16","2024-12-30","2025-01-13","2025-01-27","2025-02-10","2025-02-24","2025-03-10","2025-03-24","2025-04-07","2025-04-21","2025-05-05","2025-05-19","2025-06-02","2025-06-16","2025-06-30","2025-07-14","2025-07-28","2025-08-11","2025-08-25","2025-09-08","2025-09-22","2025-10-06","2025-10-20","2025-11-03","2025-11-17","2025-12-01","2025-12-15","2025-12-29"],"score":[0.0,3.200000047683716,3.259999990463257,3.5,3.259999990463257,0.0,0.0,1.8799999952316284,0.0,0.0,0.33000001311302185,0.0,0.18000000715255737,0.10000000149011612,0.0,0.07999999821186066,0.28999999165534973,3.0899999141693115,5.150000095367432,6.869999885559082,8.300000190734863,7.670000076293945,4.260000228881836,4.289999961853027,4.289999961853027,4.289999961853027,5.389999866485596,5.239999771118164,7.409999847412109,8.489999771118164,9.510000228881836,9.029999732971191,7.889999866485596,6.480000019073486,0.6700000166893005,0.10999999940395355,0.0,0.7599999904632568,1.2599999904632568,1.2599999904632568,0.9100000262260437],"threshold":6.427,"bend_date":"2025-03-24","candidate_id":"S141","decision":"ask","decision_reason":"approved situation, sustained bend","signature":[{"feature":"business_equipment__amount_z","weight":3.86},{"feature":"enterprise_counter_fee__new","weight":3.0},{"feature":"accountant_fee__new","weight":3.0},{"feature":"social_insurance_fund__new","weight":3.0},{"feature":"business_equipment__new","weight":3.0}],"true_event_date":"2025-06-15"},{"household_id":"HH002247","archetype":"single","caption":"A lookalike: side income while still employed. Grouped apart, kept silent","truth":"hard_negative","weeks":["2024-06-17","2024-07-01","2024-07-15","2024-07-29","2024-08-12","2024-08-26","2024-09-09","2024-09-23","2024-10-07","2024-10-21","2024-11-04","2024-11-18","2024-12-02","2024-12-16","2024-12-30","2025-01-13","2025-01-27","2025-02-10","2025-02-24","2025-03-10","2025-03-24","2025-04-07","2025-04-21","2025-05-05","2025-05-19","2025-06-02","2025-06-16","2025-06-30","2025-07-14","2025-07-28","2025-08-11","2025-08-25","2025-09-08","2025-09-22","2025-10-06","2025-10-20","2025-11-03","2025-11-17","2025-12-01","2025-12-15","2025-12-29"],"score":[3.0,3.0,3.009999990463257,3.0,0.0,0.009999999776482582,0.0,0.0,0.23999999463558197,3.0,4.849999904632568,4.869999885559082,7.96999979019165,7.070000171661377,6.349999904632568,6.349999904632568,0.33000001311302185,1.090000033378601,0.9599999785423279,3.259999990463257,3.259999990463257,3.259999990463257,3.2899999618530273,1.190000057220459,1.5700000524520874,1.3799999952316284,0.8600000143051147,0.3199999928474426,0.30000001192092896,0.0,0.0,0.029999999329447746,0.0,0.07999999821186066,0.10000000149011612,0.0,0.0,0.3700000047683716,0.009999999776482582,0.18000000715255737,0.10000000149011612],"threshold":6.427,"bend_date":"2024-12-16","candidate_id":"S145","decision":"silent","decision_reason":"situation below review cutoff","signature":[{"feature":"client_payment_in__amount_z","weight":6.0},{"feature":"client_payment_in__rate_z","weight":3.91},{"feature":"client_payment_in__new","weight":1.5},{"feature":"app_balance_check__rate_z","weight":0.93},{"feature":"leisure__rate_z","weight":-0.12}],"true_event_date":null},{"household_id":"HH002210","archetype":"single","caption":"Found, and blocked by the gate. Kate says nothing commercial","truth":"financial_distress","weeks":["2024-06-17","2024-07-01","2024-07-15","2024-07-29","2024-08-12","2024-08-26","2024-09-09","2024-09-23","2024-10-07","2024-10-21","2024-11-04","2024-11-18","2024-12-02","2024-12-16","2024-12-30","2025-01-13","2025-01-27","2025-02-10","2025-02-24","2025-03-10","2025-03-24","2025-04-07","2025-04-21","2025-05-05","2025-05-19","2025-06-02","2025-06-16","2025-06-30","2025-07-14","2025-07-28","2025-08-11","2025-08-25","2025-09-08","2025-09-22","2025-10-06","2025-10-20","2025-11-03","2025-11-17","2025-12-01","2025-12-15","2025-12-29"],"score":[3.25,3.5,3.2300000190734863,0.18000000715255737,3.0399999618530273,3.049999952316284,3.0799999237060547,3.049999952316284,1.940000057220459,3.200000047683716,1.159999966621399,2.559999942779541,1.1100000143051147,0.0,0.0,0.0,0.0,3.109999895095825,3.799999952316284,5.300000190734863,6.800000190734863,4.079999923706055,3.680000066757202,1.7699999809265137,3.5999999046325684,3.2899999618530273,3.7799999713897705,4.090000152587891,0.9700000286102295,1.4199999570846558,5.260000228881836,7.909999847412109,9.210000038146973,8.59000015258789,3.049999952316284,3.0199999809265137,1.1100000143051147,2.7100000381469727,4.150000095367432,3.0399999618530273,3.5],"threshold":6.427,"bend_date":"2025-09-08","candidate_id":"S149","decision":"silent","decision_reason":"gate: suppressed (financial_distress)","signature":[{"feature":"overdraft_interest__amount_z","weight":5.32},{"feature":"overdraft_interest__rate_z","weight":3.98},{"feature":"failed_direct_debit__rate_z","weight":3.95},{"feature":"app_balance_check__rate_z","weight":2.85},{"feature":"travel__new","weight":1.5}],"true_event_date":"2025-07-27"},{"household_id":"HH003698","archetype":"pre_retirement","caption":"An ordinary household. Nothing changes, so nothing is said","truth":"control","weeks":["2024-06-17","2024-07-01","2024-07-15","2024-07-29","2024-08-12","2024-08-26","2024-09-09","2024-09-23","2024-10-07","2024-10-21","2024-11-04","2024-11-18","2024-12-02","2024-12-16","2024-12-30","2025-01-13","2025-01-27","2025-02-10","2025-02-24","2025-03-10","2025-03-24","2025-04-07","2025-04-21","2025-05-05","2025-05-19","2025-06-02","2025-06-16","2025-06-30","2025-07-14","2025-07-28","2025-08-11","2025-08-25","2025-09-08","2025-09-22","2025-10-06","2025-10-20","2025-11-03","2025-11-17","2025-12-01","2025-12-15","2025-12-29"],"score":[3.4600000381469727,2.740000009536743,0.0,0.8899999856948853,0.0,0.05000000074505806,0.09000000357627869,0.0,0.0,1.2699999809265137,0.5600000023841858,0.8999999761581421,1.649999976158142,0.20999999344348907,0.25,0.25,0.25,0.0,0.0,0.2199999988079071,0.25999999046325684,0.0,0.0,0.0,0.0,0.0,0.05000000074505806,0.0,0.3499999940395355,0.0,2.0899999141693115,1.6200000047683716,2.680000066757202,0.8600000143051147,2.069999933242798,2.069999933242798,0.7099999785423279,0.33000001311302185,0.009999999776482582,0.0,0.30000001192092896],"threshold":6.427,"bend_date":null,"candidate_id":null,"decision":"silent","decision_reason":"no sustained departure from own normal","signature":[],"true_event_date":null}]};
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const R = DATA.report, C = DATA.candidates, D = DATA.demo;
+
+// ---------- label helpers ----------
+const READ = {salary_in:"salary", client_payment_in:"client payments", social_insurance_fund:"a social insurance fund",
+  accountant_fee:"an accountant", enterprise_counter_fee:"enterprise registration", professional_liability_ins:"professional liability cover",
+  business_equipment:"business equipment", coworking_out:"coworking", property_platform:"property platforms",
+  mortgage_simulator_session:"the mortgage simulator", surveyor_epc_fee:"a surveyor or EPC", notary_escrow:"a notary escrow",
+  registration_duty:"registration duty", baby_retail:"baby shops", garage_repair:"garage repairs", roadside_assistance:"roadside assistance",
+  car_dealer:"a car dealer", elder_care_provider:"elder care", home_care_service:"home care", care_transport:"care transport",
+  legal_fee:"legal fees", mediation_fee:"mediation", overdraft_interest:"overdraft interest", failed_direct_debit:"failed direct debits",
+  app_balance_check:"balance checks", app_loan_screen:"loan screens", app_insurance_screen:"insurance screens",
+  windfall_in:"one-off windfalls", travel:"travel", debt_collection_out:"debt collection"};
+const STAT = {rate_z:"more often", new:"for the first time", amount_z:"spending up"};
+function featLabel(f){ const [c,s]=f.split("__"); return `${READ[c]||c.replace(/_/g," ")}, ${STAT[s]||s}`; }
+const COV = {no_existing_rule:"no existing rule", partial_rule:"partly covered", existing_rule:"Kate already covers this"};
+const GATE = {pass:"passes the gate", protection_only:"protection only", suppressed:"suppressed"};
+
+// map each candidate to the pattern evaluation matched it to (evaluation only)
+const MATCH = R.cohort_composition;
+function validatedLead(cid){
+  const m = MATCH[cid]; if(!m) return null;
+  const l = R.lead_time[m.majority]; return l && l.holdout ? l.holdout : null;
+}
+
+// ---------- header ----------
+const found = C.length;
+$("#cplus").textContent = "+" + found;
+$("#lede").textContent = `Kate's 140 situations were each written by a person. These ${found} were found in ${DATA.meta.n_households.toLocaleString("en")} synthetic households with no labels, then reviewed here before any customer hears about them.`;
+
+// ---------- tabs ----------
+document.querySelectorAll("nav button").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll("nav button").forEach(x => x.setAttribute("aria-selected", x===b));
+  document.querySelectorAll(".view").forEach(v => v.classList.remove("on"));
+  $("#v-" + b.dataset.v).classList.add("on");
+  if (b.dataset.v === "sil") drawSilence();
+}));
+
+// ---------- situations ----------
+const review = Object.fromEntries(C.map(c => [c.candidate_id, c.review.state]));
+function rowChips(c){
+  const out = [];
+  if (c.gate.status === "suppressed") out.push(`<span class="chip supp">suppressed</span>`);
+  else if (c.gate.status === "protection_only") out.push(`<span class="chip prot">protection only</span>`);
+  else if (c.coverage === "no_existing_rule")
+    out.push(`<span class="chip ${review[c.candidate_id]==="approved"?"new":""}">no existing rule</span>`);
+  else out.push(`<span class="chip">${esc(COV[c.coverage])}</span>`);
+  if (c.gate.status === "pass" && review[c.candidate_id] !== "approved") out.push(`<span class="chip silent">silent</span>`);
+  return out.join("");
+}
+function renderLedger(sel){
+  $("#ledger").innerHTML = C.map(c => {
+    const vl = validatedLead(c.candidate_id);
+    const lead = vl ? `${Math.round(vl.median_true_lead_days)} days early` : "no validated lead";
+    return `<button class="row ${c.gate.status!=="pass"?"blocked":""}" data-id="${esc(c.candidate_id)}" aria-current="${c.candidate_id===sel}">
+      <span class="num">${esc(c.candidate_id.slice(1))}</span>
+      <span><span class="ttl">${esc(c.title)}</span><span class="sub">${c.size} households, ${lead}</span></span>
+      <span class="chips">${rowChips(c)}</span></button>`;
+  }).join("");
+  document.querySelectorAll(".row").forEach(r => r.addEventListener("click", () => select(r.dataset.id)));
+}
+function select(id){
+  const c = C.find(x => x.candidate_id === id);
+  renderLedger(id);
+  const vl = validatedLead(id);
+  const m = MATCH[id];
+  const maxw = Math.max(...c.top_features.map(t => Math.abs(t.weight)), 1);
+  const gcls = {pass:"pass", protection_only:"prot", suppressed:"supp"}[c.gate.status];
+  const gtext = {
+    pass: "Nothing in what moved relies on health, separation or financial distress evidence, so a reviewer may approve this for Kate.",
+    protection_only: `The signature leans on ${esc(c.gate.reason)} evidence or implies a ${esc(c.gate.reason)} inference. Kate may prepare protective help, and may never sell against it.`,
+    suppressed: `The signature leans on ${esc((c.gate.reason||"").replace("_"," "))} evidence. Blocked before any person could see it as an opportunity. Kate says nothing commercial.`
+  }[c.gate.status];
+  const state = review[id];
+  $("#detail").innerHTML = `
+    <div class="chips" style="justify-content:flex-start">${rowChips(c)}</div>
+    <h2 style="margin-top:10px">${esc(c.title)}</h2>
+    <p>${esc(c.description)}</p>
+    <div class="lead-num">${vl ? Math.round(vl.median_true_lead_days) + " days" : "n/a"}</div>
+    <div class="lead-lab">validated lead time on households the engine never saw${vl ? `, ${Math.round(vl.share_detected_before_event*100)}% seen before the event` : ""}</div>
+    <div class="stats">
+      <div class="stat"><b>${c.size}</b><span>households in cohort</span></div>
+      <div class="stat"><b>${c.stability.toFixed(2)}</b><span>stability across time</span></div>
+      <div class="stat"><b>${Math.round(c.median_lead_days)}d</b><span>pipeline's own estimate</span></div>
+    </div>
+    <div class="sig"><h3>What moved, relative to each household's own normal</h3>
+      ${c.top_features.map(t => `<div class="bar"><span>${esc(featLabel(t.feature))}</span>
+        <span class="track"><span class="fill ${t.weight<0?"neg":""}" style="width:${Math.round(Math.abs(t.weight)/maxw*100)}%"></span></span></div>`).join("")}
+    </div>
+    <div class="gatebox ${gcls}"><b>Gate: ${esc(GATE[c.gate.status])}.</b> ${gtext}</div>
+    <div class="actions">
+      <button class="btn primary" id="approve" ${c.gate.status!=="pass"||state==="approved"?"disabled":""}>${state==="approved"?"Approved":"Approve for Kate"}</button>
+      <button class="btn" id="hold" ${c.gate.status!=="pass"||state!=="approved"?"disabled":""}>Keep silent</button>
+    </div>
+    <p class="note">Nothing reaches a customer without a reviewer's approval. Review changes here are local to this demo.</p>
+    ${m ? `<div class="valid">Validation, from the sealed answer key: this cohort was <b>${Math.round(m.purity*100)}% ${esc(m.majority.replace(/_/g," "))}</b> across ${m.size} training households.</div>` : ""}`;
+  const a = $("#approve"), h = $("#hold");
+  if (a) a.onclick = () => { review[id] = "approved"; select(id); };
+  if (h) h.onclick = () => { review[id] = "pending"; select(id); };
+}
+renderLedger(C[0].candidate_id); select(C[0].candidate_id);
+
+// ---------- silence ----------
+function dots(canvas, counts){
+  const ctx = canvas.getContext("2d"), W = canvas.width, H = canvas.height;
+  ctx.clearRect(0,0,W,H);
+  const n = counts.reduce((a,b)=>a+b[0],0);
+  const cols = 67, rows = Math.ceil(n/cols), s = Math.min(W/cols, H/rows), g = Math.max(1, s*0.18);
+  let i = 0;
+  for (const [k, col] of counts){
+    ctx.fillStyle = col;
+    for (let j=0;j<k;j++,i++){
+      const x = (i%cols)*s, y = Math.floor(i/cols)*s;
+      ctx.fillRect(x, y, s-g, s-g);
+    }
+  }
+}
+function drawSilence(){
+  const c = R.contact, n = c.holdout_households;
+  const A = c.baseline_any_change, B = c.ours;
+  $("#s-a-num").textContent = A.messages.toLocaleString();
+  $("#s-b-num").textContent = B.messages.toLocaleString();
+  const P = css("--purple"), NV = css("--navy"), LV = css("--lav"), PL = css("--pale");
+  const aWrong = A.messages - A.correct - A.sent_to_separating_or_distressed;
+  dots($("#grid-a"), [[A.correct,P],[A.sent_to_separating_or_distressed,NV],[aWrong,LV],[n-A.messages,PL]]);
+  const bWrong = B.messages - B.correct - B.sent_to_separating_or_distressed;
+  dots($("#grid-b"), [[B.correct,P],[B.sent_to_separating_or_distressed,NV],[bWrong,LV],[n-B.messages,PL]]);
+  const kv = (x) => `<dt>Right moment</dt><dd>${Math.round(x.precision*100)}%</dd>
+    <dt>Sent to separating or distressed households</dt><dd>${x.sent_to_separating_or_distressed}</dd>
+    <dt>Sent to planted lookalikes</dt><dd>${x.sent_to_hard_negatives}</dd>`;
+  $("#s-a-kv").innerHTML = kv(A);
+  $("#s-b-kv").innerHTML = kv(B) + `<dt>Fewer messages</dt><dd>${Math.round(c.message_reduction_vs_any_change*100)}%</dd>`;
+}
+matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", () => { if ($("#v-sil").classList.contains("on")) drawSilence(); });
+
+// ---------- one household ----------
+let cur = 0, timer = null;
+const KIND = {going_self_employed:"Going self-employed", hard_negative:"A lookalike", financial_distress:"Financial distress", control:"Ordinary household"};
+$("#hh-pick").innerHTML = D.map((d,i) => `<button data-i="${i}" aria-pressed="${i===0}"><b>${esc(KIND[d.truth]||d.truth)}</b><span>${esc(d.household_id)} · ${esc(d.archetype.replace(/_/g," "))}</span></button>`).join("");
+document.querySelectorAll("#hh-pick button").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll("#hh-pick button").forEach(x => x.setAttribute("aria-pressed", x===b));
+  cur = +b.dataset.i; drawHH(D[cur].weeks.length, false);
+}));
+function xy(d){
+  const W=960,H=300,pl=44,pr=16,pt=16,pb=34, n=d.weeks.length;
+  const ymax = Math.max(d.threshold*1.6, ...d.score) * 1.05;
+  return {W,H,pl,pr,pt,pb,n,ymax,
+    x:i=>pl+(W-pl-pr)*i/(n-1), y:v=>pt+(H-pt-pb)*(1-v/ymax)};
+}
+function idxOf(d, iso){ if(!iso) return -1; let best=0; d.weeks.forEach((w,i)=>{ if(Math.abs(new Date(w)-new Date(iso)) < Math.abs(new Date(d.weeks[best])-new Date(iso))) best=i; }); return best; }
+function drawHH(upto, revealed){
+  const d = D[cur], g = xy(d), P=css("--purple"), L=css("--line"), M=css("--muted"), I=css("--ink"), LV=css("--lav");
+  const bi = idxOf(d, d.bend_date), ei = idxOf(d, d.true_event_date);
+  const pts = d.score.slice(0, upto).map((v,i)=>`${g.x(i).toFixed(1)},${g.y(v).toFixed(1)}`).join(" ");
+  let s = `<line x1="${g.pl}" x2="${g.W-g.pr}" y1="${g.y(d.threshold)}" y2="${g.y(d.threshold)}" stroke="${M}" stroke-dasharray="4 5"/>
+    <text x="${g.W-g.pr}" y="${g.y(d.threshold)-6}" fill="${M}" font-size="12" text-anchor="end">threshold</text>`;
+  [[0,"start"], [Math.floor(g.n/2),"middle"], [g.n-1,"end"]].forEach(([i,a]) => s += `<text x="${g.x(i)}" y="${g.H-10}" fill="${M}" font-size="12" text-anchor="${a}">${d.weeks[i].slice(0,7)}</text>`);
+  s += `<polyline fill="none" stroke="${P}" stroke-width="2.5" stroke-linejoin="round" points="${pts}"/>`;
+  if (bi >= 0 && upto > bi){
+    s += `<circle cx="${g.x(bi)}" cy="${g.y(d.score[bi])}" r="6" fill="${P}"/>
+      <text x="${g.x(bi)}" y="${g.y(d.score[bi])-12}" fill="${I}" font-size="13" text-anchor="middle" font-weight="600">${d.decision==="ask"?"Kate asks":"stays silent"}</text>`;
+  }
+  if (revealed && ei >= 0){
+    s += `<line x1="${g.x(ei)}" x2="${g.x(ei)}" y1="${g.pt}" y2="${g.H-g.pb}" stroke="${I}" stroke-width="2"/>
+      <text x="${g.x(ei)+6}" y="${g.pt+14}" fill="${I}" font-size="13">${d.truth==="going_self_employed"?"salary stops":"event"}</text>`;
+    if (bi >= 0){
+      const dd = Math.round((new Date(d.weeks[ei]) - new Date(d.weeks[bi]))/864e5);
+      s += `<line x1="${g.x(bi)}" x2="${g.x(ei)}" y1="${g.H-g.pb-10}" y2="${g.H-g.pb-10}" stroke="${LV}" stroke-width="3"/>
+        <text x="${(g.x(bi)+g.x(ei))/2}" y="${g.H-g.pb-18}" fill="${I}" font-size="13" text-anchor="middle" font-weight="600">${Math.abs(dd)} days ${dd>=0?"early":"late"}</text>`;
+    }
+  }
+  $("#hh-svg").innerHTML = s;
+  $("#st1").classList.toggle("lit", upto > 3);
+  const fired = bi >= 0 && upto > bi;
+  $("#st2").classList.toggle("lit", fired || (bi < 0 && upto >= d.weeks.length));
+  $("#st2t").textContent = fired
+    ? `${d.bend_date}: sustained departure. ${d.signature.slice(0,3).map(t=>featLabel(t.feature)).join("; ")}. Kate's decision: ${d.decision==="ask"?"ask once":"stay silent"}. Reason: ${d.decision_reason}.`
+    : (bi < 0 && upto >= d.weeks.length ? "No sustained departure from its own normal. Nothing is said." : "Waiting.");
+  $("#st3").classList.toggle("lit", revealed);
+  if (revealed){
+    const days = (bi>=0 && ei>=0) ? Math.round((new Date(d.weeks[ei]) - new Date(d.weeks[bi]))/864e5) : null;
+    $("#st3t").textContent = d.true_event_date
+      ? `${esc(KIND[d.truth])} on ${d.true_event_date}.${days!==null ? ` Seen ${days} days ${days>=0?"before":"after"} it happened.` : ""} ${esc(d.caption)}.`
+      : `${esc(d.caption)}.`;
+  } else $("#st3t").textContent = "Hidden until you reveal it. The engine never saw this.";
+  $("#reveal").disabled = upto < d.weeks.length;
+}
+$("#play").addEventListener("click", () => {
+  clearInterval(timer); const d = D[cur]; let k = 2;
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reduce){ drawHH(d.weeks.length, false); return; }
+  timer = setInterval(() => { drawHH(k, false); if (++k > d.weeks.length) clearInterval(timer); }, 110);
+});
+$("#reveal").addEventListener("click", () => drawHH(D[cur].weeks.length, true));
+drawHH(2, false);
+
+// ---------- method ----------
+const h = R.headline;
+$("#method").innerHTML = [
+  [`${h.patterns_recovered} of ${h.patterns_planted}`, "hidden life patterns recovered, with no labels"],
+  [`${Math.round(h.headline_median_lead_days_holdout)} days`, "median warning before a salary stops, on unseen households"],
+  [`${Object.values(R.gate).filter(g=>g.correct).length} of ${Object.keys(R.gate).length}`, "cohorts the gate handled correctly"],
+  [`${R.controls.mean_cohort_purity_real.toFixed(2)} vs ${R.controls.mean_cohort_purity_shuffled.toFixed(2)}`, "cohort purity, real labels vs shuffled. Shuffled equals chance"],
+].map(([b,s]) => `<div class="m"><b>${b}</b><span>${s}</span></div>`).join("");
+const LT = R.lead_time;
+$("#lead-table").innerHTML = `<tr><th>Life pattern</th><th class="r">Households</th><th class="r">Median lead</th><th class="r">Seen before event</th><th>Gate</th></tr>` +
+  Object.entries(LT).filter(([,v])=>v.holdout).map(([p,v]) =>
+    `<tr><td>${esc(p.replace(/_/g," "))}</td><td class="r">${v.holdout.n}</td><td class="r">${v.holdout.median_true_lead_days>=0 ? Math.round(v.holdout.median_true_lead_days)+" days before" : Math.round(-v.holdout.median_true_lead_days)+" days after"}</td>
+     <td class="r">${Math.round(v.holdout.share_detected_before_event*100)}%</td><td>${esc((R.gate[p]?.got||[]).map(x=>GATE[x]||x).join(", "))}</td></tr>`).join("") +
+  `<tr><td>subscription creep</td><td class="r">-</td><td class="r">not found</td><td class="r">-</td><td>too common in ordinary life to separate</td></tr>`;
+$("#caveat").textContent = R.caveat + " The supervised benchmark scores near 0.99 ROC-AUC for the same reason: the pattern was planted cleanly. Real households mix several changes at once.";
+</script>
+</body>
+</html>

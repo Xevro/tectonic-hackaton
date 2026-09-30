@@ -1,0 +1,159 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Situation 141 contracts",
+  "version": "1.0.0",
+  "frozen_at": "hour-0",
+  "note": "Every track codes against this. Changes require all four track owners to agree.",
+
+  "definitions": {
+
+    "Household": {
+      "type": "object",
+      "required": ["household_id", "archetype", "members_adults", "members_children", "region", "opened_at"],
+      "properties": {
+        "household_id": { "type": "string", "pattern": "^HH[0-9]{6}$" },
+        "archetype": {
+          "type": "string",
+          "enum": ["young_starter", "single", "dual_no_kids", "family", "pre_retirement"]
+        },
+        "members_adults": { "type": "integer", "minimum": 1, "maximum": 2 },
+        "members_children": { "type": "integer", "minimum": 0, "maximum": 4 },
+        "region": { "type": "string", "enum": ["flanders", "brussels", "wallonia"] },
+        "opened_at": { "type": "string", "format": "date" },
+        "split": { "type": "string", "enum": ["train", "holdout"] }
+      }
+    },
+
+    "Event": {
+      "type": "object",
+      "description": "One economic event. The only input the model ever sees.",
+      "required": ["household_id", "date", "category", "direction", "amount"],
+      "properties": {
+        "household_id": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "category": {
+          "type": "string",
+          "description": "Controlled vocabulary. See generator/vocabulary.py for the full list.",
+          "examples": ["salary_in", "rent_out", "grocery", "social_insurance_fund", "accountant", "notary_escrow"]
+        },
+        "direction": { "type": "string", "enum": ["in", "out"] },
+        "amount": { "type": "number", "minimum": 0 },
+        "counterparty_id": { "type": ["string", "null"] },
+        "channel": { "type": "string", "enum": ["card", "transfer", "direct_debit", "app", "cash"] }
+      }
+    },
+
+    "CutRequest": {
+      "type": "object",
+      "description": "The ONLY way any track reads history. Enforces the causal boundary.",
+      "required": ["household_id", "cut_date"],
+      "properties": {
+        "household_id": { "type": "string" },
+        "cut_date": { "type": "string", "format": "date" },
+        "lookback_days": { "type": "integer", "default": 540 }
+      }
+    },
+
+    "Embedding": {
+      "type": "object",
+      "description": "Self-supervised representation of one household at one point in time.",
+      "required": ["household_id", "cut_date", "vector"],
+      "properties": {
+        "household_id": { "type": "string" },
+        "cut_date": { "type": "string", "format": "date" },
+        "vector": { "type": "array", "items": { "type": "number" }, "minItems": 8, "maxItems": 64 }
+      }
+    },
+
+    "Bend": {
+      "type": "object",
+      "description": "A sustained departure of a household from its OWN prior trajectory. Detected with no labels.",
+      "required": ["household_id", "bend_date", "score", "signature"],
+      "properties": {
+        "household_id": { "type": "string" },
+        "bend_date": { "type": "string", "format": "date" },
+        "score": { "type": "number", "description": "Self-relative. Multiples of this household's own historical drift." },
+        "signature": {
+          "type": "object",
+          "description": "feature name -> deviation in own-baseline z units",
+          "additionalProperties": { "type": "number" }
+        }
+      }
+    },
+
+    "Cohort": {
+      "type": "object",
+      "description": "A group of households whose trajectories bent in a similar way. Discovered, not authored.",
+      "required": ["cohort_id", "size", "centroid", "top_features", "stability"],
+      "properties": {
+        "cohort_id": { "type": "string" },
+        "size": { "type": "integer" },
+        "centroid": { "type": "array", "items": { "type": "number" } },
+        "top_features": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "feature": { "type": "string" },
+              "weight": { "type": "number" },
+              "median_days_before_bend": { "type": ["number", "null"] }
+            }
+          }
+        },
+        "stability": { "type": "number", "minimum": 0, "maximum": 1, "description": "Centroid agreement across two disjoint time windows." },
+        "purity": { "type": ["number", "null"], "description": "Filled only by evaluation, never by the pipeline." }
+      }
+    },
+
+    "CandidateSituation": {
+      "type": "object",
+      "description": "What the console shows a human. The unit of output of the whole system.",
+      "required": ["candidate_id", "cohort_id", "title", "description", "size", "median_lead_days", "rank_score", "gate"],
+      "properties": {
+        "candidate_id": { "type": "string" },
+        "cohort_id": { "type": "string" },
+        "title": { "type": "string", "maxLength": 80 },
+        "description": { "type": "string", "description": "Plain language. Generated from the signature, never invented." },
+        "size": { "type": "integer" },
+        "median_lead_days": { "type": "number", "description": "Days between bend detection and the downstream change." },
+        "coverage": {
+          "type": "string",
+          "enum": ["existing_rule", "partial_rule", "no_existing_rule"],
+          "description": "Checked against a register of KBC's published proactive situations."
+        },
+        "rank_score": { "type": "number" },
+        "gate": {
+          "type": "object",
+          "required": ["status"],
+          "properties": {
+            "status": { "type": "string", "enum": ["pass", "suppressed", "protection_only"] },
+            "reason": { "type": ["string", "null"], "enum": ["health", "separation", "financial_distress", "minor", null] }
+          }
+        },
+        "review": {
+          "type": "object",
+          "properties": {
+            "state": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+            "reviewer": { "type": ["string", "null"] },
+            "decided_at": { "type": ["string", "null"], "format": "date-time" }
+          }
+        }
+      }
+    },
+
+    "Decision": {
+      "type": "object",
+      "description": "Every time the system considered speaking, including when it chose not to. Silence is logged.",
+      "required": ["household_id", "decision_date", "rung", "candidate_id", "score"],
+      "properties": {
+        "household_id": { "type": "string" },
+        "decision_date": { "type": "string", "format": "date" },
+        "candidate_id": { "type": ["string", "null"] },
+        "rung": { "type": "string", "enum": ["silent", "prepare", "inform", "ask"] },
+        "score": { "type": "number" },
+        "threshold": { "type": "number" },
+        "reason": { "type": "string" }
+      }
+    }
+  }
+}

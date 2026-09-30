@@ -1,11 +1,14 @@
-.idea
-node_modules
-.next
-out
-.vercel
-*.tsbuildinfo
-next-env.d.ts
+# secrets: never commit
 .env
-.env.local
-.env*.local
+*.env
+# generated data: reproducible with ./run_all.sh (seed 141)
+# data/ is committed so judges can reproduce the evaluation
+# runtime state written by the API
+out/audit.log
+out/review_state.json
+out/*.tmp
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
 .DS_Store
