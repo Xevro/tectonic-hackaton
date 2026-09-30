@@ -21,6 +21,10 @@ const ALLOWED_KEYS = new Set([
   "life_note",
 ]);
 
+export function isAllowedMemoryKey(key: string) {
+  return ALLOWED_KEYS.has(key);
+}
+
 function normalizeText(text: string) {
   return text.toLowerCase().replace(/[’‘]/g, "'");
 }

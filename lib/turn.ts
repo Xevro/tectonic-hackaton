@@ -6,8 +6,10 @@ import {
   detectIntent,
   extractDeterministic,
   dedupe,
+  isAllowedMemoryKey,
   type MemoryUpdate,
 } from "@/lib/extract";
+import { isDemoCustomer, type DemoCustomerId } from "@/lib/profiles";
 import { commitmentsBetween, movableCents } from "@/lib/finance";
 import { extractWithGemini } from "@/lib/gemini";
 import { describeCustomer, planNextAction, type MemoryView, type PlanContext } from "@/lib/planner";
@@ -16,23 +18,62 @@ import { MILA_HOME_STEP_CENTS, MILA_HOME_TARGET_CENTS, VAT_SAFETY_CENTS } from "
 import { laterQuote } from "@/lib/population";
 
 const textSchema = z.string().trim().min(1).max(2000);
-const idSchema = z.string().min(1).max(40);
+const SAFE_ID = /^[A-Za-z0-9_-]{1,40}$/;
+const safeIdSchema = z.string().regex(SAFE_ID);
 const moveSchema = z.object({
-  amountCents: z.number().int().positive(),
-  fromAccountId: z.string().min(1),
-  toAccountId: z.string().min(1),
-  goalKey: z.string().min(1),
+  amountCents: z.number().int().positive().max(10_000_000),
+  fromAccountId: safeIdSchema,
+  toAccountId: safeIdSchema,
+  goalKey: z.enum(["deposit", "vat", "home"]),
 });
 const adjustSchema = z.object({
-  savingsPlanId: z.string().min(1),
+  savingsPlanId: safeIdSchema,
   skipMonth: z.string().regex(/^\d{4}-\d{2}$/),
 });
 
 export class CompassError extends Error {}
 
+function requireCustomerId(value: unknown): DemoCustomerId {
+  if (typeof value !== "string" || !isDemoCustomer(value)) {
+    throw new CompassError("Customer not found");
+  }
+  return value;
+}
+
+function requireSafeId(value: unknown): string {
+  if (typeof value !== "string" || !SAFE_ID.test(value)) {
+    throw new CompassError("Invalid id");
+  }
+  return value;
+}
+
+function requireGoalKey(value: unknown): "deposit" | "vat" | "home" {
+  if (value !== "deposit" && value !== "vat" && value !== "home") {
+    throw new CompassError("Goal not found");
+  }
+  return value;
+}
+
+function requireCents(value: unknown): number {
+  if (typeof value !== "number" || !Number.isInteger(value) || value <= 0 || value > 10_000_000) {
+    throw new CompassError("Invalid amount");
+  }
+  return value;
+}
+
+function requireActionType(
+  value: unknown,
+): "adjust_savings_plan" | "allocate_to_pot" | "reserve_vat" {
+  if (value !== "adjust_savings_plan" && value !== "allocate_to_pot" && value !== "reserve_vat") {
+    throw new CompassError("Unknown action");
+  }
+  return value;
+}
+
 type Graph = NonNullable<Awaited<ReturnType<typeof loadGraph>>>;
 
-export async function handleUserMessage(customerId: string, raw: string) {
+export async function handleUserMessage(untrustedCustomerId: string, raw: string) {
+  const customerId = requireCustomerId(untrustedCustomerId);
   const text = textSchema.parse(raw);
   const customer = await prisma.customer.findUnique({ where: { id: customerId } });
   if (!customer) throw new CompassError("Customer not found");
@@ -83,7 +124,8 @@ export async function handleUserMessage(customerId: string, raw: string) {
   });
 }
 
-export async function openNewSession(customerId: string) {
+export async function openNewSession(untrustedCustomerId: string) {
+  const customerId = requireCustomerId(untrustedCustomerId);
   await prisma.conversation.updateMany({
     where: { customerId, closedAt: null },
     data: { closedAt: new Date() },
@@ -91,8 +133,9 @@ export async function openNewSession(customerId: string) {
   await prisma.conversation.create({ data: { customerId } });
 }
 
-export async function confirmProposal(customerId: string, actionId: string) {
-  const id = idSchema.parse(actionId);
+export async function confirmProposal(untrustedCustomerId: string, actionId: string) {
+  const customerId = requireCustomerId(untrustedCustomerId);
+  const id = requireSafeId(actionId);
   await prisma.$transaction(async (tx) => {
     const action = await tx.proposedAction.findFirst({ where: { id, customerId } });
     if (!action) throw new CompassError("Action not found");
@@ -103,8 +146,9 @@ export async function confirmProposal(customerId: string, actionId: string) {
 
     if (action.type === "adjust_savings_plan") {
       const payload = adjustSchema.parse(action.payload);
+      const savingsPlanId = requireSafeId(payload.savingsPlanId);
       const plan = await tx.savingsPlan.findFirst({
-        where: { id: payload.savingsPlanId, customerId },
+        where: { id: savingsPlanId, customerId },
       });
       if (!plan) throw new CompassError("Savings plan not found");
       await tx.savingsPlan.update({
@@ -124,8 +168,9 @@ export async function confirmProposal(customerId: string, actionId: string) {
   });
 }
 
-export async function declineProposal(customerId: string, actionId: string) {
-  const id = idSchema.parse(actionId);
+export async function declineProposal(untrustedCustomerId: string, actionId: string) {
+  const customerId = requireCustomerId(untrustedCustomerId);
+  const id = requireSafeId(actionId);
   const action = await prisma.proposedAction.findFirst({ where: { id, customerId } });
   if (!action) throw new CompassError("Action not found");
   if (action.status !== "pending") return;
@@ -135,8 +180,9 @@ export async function declineProposal(customerId: string, actionId: string) {
   });
 }
 
-export async function confirmMemory(customerId: string, memoryId: string) {
-  const id = idSchema.parse(memoryId);
+export async function confirmMemory(untrustedCustomerId: string, memoryId: string) {
+  const customerId = requireCustomerId(untrustedCustomerId);
+  const id = requireSafeId(memoryId);
   const memory = await prisma.memoryItem.findFirst({ where: { id, customerId } });
   if (!memory) throw new CompassError("Memory not found");
   await prisma.memoryItem.update({
@@ -145,23 +191,39 @@ export async function confirmMemory(customerId: string, memoryId: string) {
   });
 }
 
-async function applyUpdates(customerId: string, updates: MemoryUpdate[]) {
+async function applyUpdates(untrustedCustomerId: string, updates: MemoryUpdate[]) {
+  const customerId = requireCustomerId(untrustedCustomerId);
   const saved: MemoryUpdate[] = [];
   for (const update of updates) {
-    if (!update.value || update.value.length > 200) continue;
+    if (typeof update.key !== "string" || !isAllowedMemoryKey(update.key)) continue;
+    if (typeof update.value !== "string" || !update.value || update.value.length > 200) continue;
+    if (typeof update.label !== "string" || update.label.length > 80) continue;
+    if (typeof update.kind !== "string" || typeof update.status !== "string") continue;
+    if (typeof update.source !== "string") continue;
+    const key = update.key;
+    const value = update.value;
+    const label = update.label;
+    const kind = update.kind;
+    const status = update.status;
+    const source = update.source;
     await prisma.memoryItem.upsert({
-      where: { customerId_key: { customerId, key: update.key } },
+      where: { customerId_key: { customerId, key } },
       create: {
         customerId,
-        ...update,
+        key,
+        label,
+        value,
+        kind,
+        status,
+        source,
         observedAt: demoNow(),
       },
       update: {
-        label: update.label,
-        value: update.value,
-        kind: update.kind,
-        status: update.status,
-        source: update.source,
+        label,
+        value,
+        kind,
+        status,
+        source,
         observedAt: demoNow(),
       },
     });
@@ -171,7 +233,8 @@ async function applyUpdates(customerId: string, updates: MemoryUpdate[]) {
   return saved;
 }
 
-async function syncGoals(customerId: string) {
+async function syncGoals(untrustedCustomerId: string) {
+  const customerId = requireCustomerId(untrustedCustomerId);
   const memories = await prisma.memoryItem.findMany({ where: { customerId } });
   const deposit = memories.find(
     (memory) => memory.key === "deposit_target_cents" && memory.status === "confirmed",
@@ -218,15 +281,17 @@ async function syncGoals(customerId: string) {
 }
 
 async function upsertProposal(
-  customerId: string,
+  untrustedCustomerId: string,
   draft: NonNullable<ReturnType<typeof planNextAction>>,
 ) {
+  const customerId = requireCustomerId(untrustedCustomerId);
+  const type = requireActionType(draft.type);
   await prisma.proposedAction.updateMany({
-    where: { customerId, status: "pending", NOT: { type: draft.type } },
+    where: { customerId, status: "pending", NOT: { type } },
     data: { status: "replaced", resolvedAt: new Date() },
   });
   const existing = await prisma.proposedAction.findFirst({
-    where: { customerId, status: "pending", type: draft.type },
+    where: { customerId, status: "pending", type },
   });
   const data = {
     title: draft.title,
@@ -239,24 +304,29 @@ async function upsertProposal(
     return;
   }
   await prisma.proposedAction.create({
-    data: { customerId, type: draft.type, status: "pending", ...data },
+    data: { customerId, type, status: "pending", ...data },
   });
 }
 
 async function applyTransfer(
   tx: Prisma.TransactionClient,
-  customerId: string,
+  untrustedCustomerId: string,
   payload: z.infer<typeof moveSchema>,
   type: string,
 ) {
+  const customerId = requireCustomerId(untrustedCustomerId);
+  const fromAccountId = requireSafeId(payload.fromAccountId);
+  const toAccountId = requireSafeId(payload.toAccountId);
+  const goalKey = requireGoalKey(payload.goalKey);
+  const amountCents = requireCents(payload.amountCents);
   const from = await tx.account.findFirst({
-    where: { id: payload.fromAccountId, customerId, kind: "checking" },
+    where: { id: fromAccountId, customerId, kind: "checking" },
   });
   const to = await tx.account.findFirst({
-    where: { id: payload.toAccountId, customerId },
+    where: { id: toAccountId, customerId },
   });
   if (!from || !to || to.id === from.id) throw new CompassError("Account not found");
-  if (payload.amountCents > from.balanceCents) {
+  if (amountCents > from.balanceCents) {
     throw new CompassError("That amount is no longer available");
   }
 
@@ -280,26 +350,26 @@ async function applyTransfer(
     nearTermCents: nearTerm,
     fallbackSafetyCents: type === "reserve_vat" ? VAT_SAFETY_CENTS : 0,
   });
-  if (payload.amountCents > spare) {
+  if (amountCents > spare) {
     throw new CompassError("That would break the buffer or the bills due this week");
   }
 
-  const goal = await tx.goal.findFirst({ where: { customerId, key: payload.goalKey } });
+  const goal = await tx.goal.findFirst({ where: { customerId, key: goalKey } });
   if (!goal) throw new CompassError("Goal not found");
 
   await tx.account.update({
     where: { id: from.id },
-    data: { balanceCents: { decrement: payload.amountCents } },
+    data: { balanceCents: { decrement: amountCents } },
   });
   await tx.account.update({
     where: { id: to.id },
-    data: { balanceCents: { increment: payload.amountCents } },
+    data: { balanceCents: { increment: amountCents } },
   });
   await tx.transaction.createMany({
     data: [
       {
         accountId: from.id,
-        amountCents: -payload.amountCents,
+        amountCents: -amountCents,
         label: `To ${to.name}`,
         bookedOn: demoNow(),
         posted: true,
@@ -307,7 +377,7 @@ async function applyTransfer(
       },
       {
         accountId: to.id,
-        amountCents: payload.amountCents,
+        amountCents,
         label: `From ${from.name}`,
         bookedOn: demoNow(),
         posted: true,
@@ -317,11 +387,12 @@ async function applyTransfer(
   });
   await tx.goal.update({
     where: { id: goal.id },
-    data: { savedCents: { increment: payload.amountCents } },
+    data: { savedCents: { increment: amountCents } },
   });
 }
 
-async function openConversation(customerId: string) {
+async function openConversation(untrustedCustomerId: string) {
+  const customerId = requireCustomerId(untrustedCustomerId);
   const existing = await prisma.conversation.findFirst({
     where: { customerId, closedAt: null },
     orderBy: { createdAt: "desc" },
@@ -330,7 +401,8 @@ async function openConversation(customerId: string) {
   return prisma.conversation.create({ data: { customerId } });
 }
 
-async function loadGraph(customerId: string) {
+async function loadGraph(untrustedCustomerId: string) {
+  const customerId = requireCustomerId(untrustedCustomerId);
   return prisma.customer.findUnique({
     where: { id: customerId },
     include: {
@@ -398,7 +470,8 @@ function toContext(graph: Graph, intent: PlanContext["intent"]): PlanContext {
   };
 }
 
-export async function openHomeOffer(customerId: string) {
+export async function openHomeOffer(untrustedCustomerId: string) {
+  const customerId = requireCustomerId(untrustedCustomerId);
   if (customerId !== "mila") throw new CompassError("This story is only for Mila");
   const checking = await prisma.account.findFirst({
     where: { customerId, kind: "checking" },
